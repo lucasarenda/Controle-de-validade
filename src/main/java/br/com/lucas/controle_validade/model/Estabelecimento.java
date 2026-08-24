@@ -42,7 +42,9 @@ public class Estabelecimento {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToMany(mappedBy = "estabelecimento")
+    @OneToMany(mappedBy = "estabelecimento",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
     private List<Produto> produtos = new ArrayList<>();
 
     public Estabelecimento(EstabelecimentoRequestDTO estabelecimentoRequestDTO,User usuario) {

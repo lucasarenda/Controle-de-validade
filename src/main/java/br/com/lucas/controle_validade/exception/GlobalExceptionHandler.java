@@ -11,51 +11,24 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
     @ExceptionHandler(UsuarioJaExisteException.class)
-    public ResponseEntity<String> handleEmailJaCadastrado(
-            UsuarioJaExisteException exception) {
-
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(exception.getMessage());
+    public ResponseEntity<String> handleEmailJaCadastrado(UsuarioJaExisteException exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(exception.getMessage());
     }
 
-    @ExceptionHandler(UsuarioNaoPossuiEstabelecimentoException.class)
-    public ResponseEntity<String> UsuarioNaoPossuiEstabelecimento(
-            UsuarioNaoPossuiEstabelecimentoException exception) {
-
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(exception.getMessage());
-    }
-
-    @ExceptionHandler(EstabelecimentoNaoPossuiProdutosException.class)
-    public ResponseEntity<String> EstabelecimentoNaoPossuiProdutos(
-            UsuarioJaExisteException exception) {
-
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(exception.getMessage());
+    @ExceptionHandler({UsuarioNaoPossuiEstabelecimentoException.class,
+            EstabelecimentoNaoPossuiProdutosException.class,
+            ProdutoNaoPossuiLotesException.class,
+            RecursoNaoEncontradoException.class})
+    public ResponseEntity<String> recursoNaoEncontrado(RuntimeException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> tratarValidacao(
-            MethodArgumentNotValidException exception) {
-
+    public ResponseEntity<Map<String, String>> tratarValidacao(MethodArgumentNotValidException exception) {
         Map<String, String> erros = new HashMap<>();
-
-        exception.getBindingResult()
-                .getFieldErrors()
-                .forEach(erro ->
-                        erros.put(
-                                erro.getField(),
-                                erro.getDefaultMessage()
-                        )
-                );
-
-        return ResponseEntity
-                .badRequest()
-                .body(erros);
+        exception.getBindingResult().getFieldErrors()
+                .forEach(erro -> erros.put(erro.getField(), erro.getDefaultMessage()));
+        return ResponseEntity.badRequest().body(erros);
     }
 }

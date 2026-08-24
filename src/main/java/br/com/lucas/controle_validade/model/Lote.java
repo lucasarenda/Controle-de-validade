@@ -1,16 +1,16 @@
 package br.com.lucas.controle_validade.model;
 
-import br.com.lucas.controle_validade.model.Estabelecimento;
+import br.com.lucas.controle_validade.Dto.request.LoteRequestDTO;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -18,42 +18,34 @@ import java.util.UUID;
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
 @Getter
-@Setter
 @NoArgsConstructor
-
 public class Lote {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-
     @NotBlank
     private String numeroLote;
-
-    @NotBlank
+    @NotNull
     private Integer quantidade;
-
-    @NotBlank
+    @NotNull
     private BigDecimal custoUnitario;
-
-    @NotBlank
+    @NotNull
     private LocalDate dataEntrada;
-
-    @NotBlank
+    @NotNull
     private LocalDate dataValidade;
-
     @NotBlank
     private String endereco;
-
     @ManyToOne
     @JoinColumn(name = "produto_id")
     private Produto produto;
 
-    public Lote(String numeroLote, Integer quantidade, BigDecimal custoUnitario, LocalDate dataEntrada, LocalDate dataValidade, String endereco) {
-        this.numeroLote = numeroLote;
-        this.quantidade = quantidade;
-        this.custoUnitario = custoUnitario;
-        this.dataEntrada = dataEntrada;
-        this.dataValidade = dataValidade;
-        this.endereco = endereco;
+    public Lote(LoteRequestDTO dto, Produto produto) {
+        this.numeroLote = dto.numeroLote();
+        this.quantidade = dto.quantidade();
+        this.custoUnitario = dto.custoUnitario();
+        this.dataEntrada = dto.dataEntrada();
+        this.dataValidade = dto.dataValidade();
+        this.endereco = dto.endereco();
+        this.produto = produto;
     }
 }

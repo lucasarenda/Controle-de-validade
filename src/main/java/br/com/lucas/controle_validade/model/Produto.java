@@ -1,7 +1,6 @@
 package br.com.lucas.controle_validade.model;
 
 import br.com.lucas.controle_validade.Dto.request.ProdutoRequestDTO;
-import br.com.lucas.controle_validade.model.Estabelecimento;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -48,7 +47,9 @@ public class Produto {
     @NotNull
     private LocalDateTime dataCadastro;
 
-    @OneToMany(mappedBy = "produto")
+    @OneToMany(mappedBy = "produto",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
     private List<Lote> lotes = new ArrayList<>();
 
     public Produto(ProdutoRequestDTO produtoRequestDTO, Estabelecimento estabelecimento) {

@@ -1,6 +1,5 @@
 package br.com.lucas.controle_validade.Dto.request;
 
-import br.com.lucas.controle_validade.model.Estabelecimento;
 import jakarta.validation.constraints.*;
 
 import java.util.UUID;

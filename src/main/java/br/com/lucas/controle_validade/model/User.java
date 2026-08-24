@@ -41,7 +41,9 @@ public class User {
     @NotNull
     private LocalDateTime dataCadastro;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
     private List<Estabelecimento> Estabelecimentos = new ArrayList<>();
 
     public User(UserRequestDTO userRequestDTO) {
