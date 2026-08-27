@@ -2,8 +2,8 @@ package br.com.lucas.controle_validade.service;
 
 import br.com.lucas.controle_validade.Dto.request.EstabelecimentoRequestDTO;
 import br.com.lucas.controle_validade.Dto.response.EstabelecimentoResponseDTO;
-import br.com.lucas.controle_validade.exception.RecursoNaoEncontradoException;
-import br.com.lucas.controle_validade.exception.UsuarioNaoPossuiEstabelecimentoException;
+import br.com.lucas.controle_validade.exception.custom.RecursoNaoEncontradoException;
+import br.com.lucas.controle_validade.exception.custom.UsuarioNaoPossuiEstabelecimentoException;
 import br.com.lucas.controle_validade.model.Estabelecimento;
 import br.com.lucas.controle_validade.model.User;
 import br.com.lucas.controle_validade.repository.EstabelecimentoRepository;

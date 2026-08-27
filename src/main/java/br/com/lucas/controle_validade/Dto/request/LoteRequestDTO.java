@@ -10,12 +10,25 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 public record LoteRequestDTO(
-        @NotBlank String numeroLote,
-        @NotNull @Positive Integer quantidade,
-        @NotNull @DecimalMin("0.0") BigDecimal custoUnitario,
-        @NotNull LocalDate dataEntrada,
-        @NotNull LocalDate dataValidade,
-        @NotBlank String endereco,
-        @NotNull UUID produtoId
+        @NotBlank
+        String numeroLote,
+
+        @NotNull
+        @Positive Integer quantidade,
+
+        @NotNull
+        @DecimalMin("0.0") BigDecimal custoUnitario,
+
+        @NotNull
+        LocalDate dataEntrada,
+
+        @NotNull
+        LocalDate dataValidade,
+
+        @NotBlank
+        String endereco,
+
+        @NotNull
+        UUID produtoId
 ) {
 }

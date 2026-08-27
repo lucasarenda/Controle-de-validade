@@ -26,7 +26,14 @@ public class UserController {
     }
 
     @GetMapping
-    public List<UserResponseDTO> buscaTodosUsers() { return service.buscaTodosUsers(); }
+    public List<UserResponseDTO> buscaTodosUsers() {
+        return service.buscaTodosUsers();
+    }
+
+    @GetMapping("/{nome}")
+    public UserResponseDTO buscaUsuarioPeloNome(@PathVariable String nome) {
+        return service.buscaUsuarioPeloNome(nome);
+    }
 
     @DeleteMapping("/{id}")
     @Transactional

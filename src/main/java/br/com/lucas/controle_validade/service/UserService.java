@@ -2,8 +2,8 @@ package br.com.lucas.controle_validade.service;
 
 import br.com.lucas.controle_validade.Dto.request.UserRequestDTO;
 import br.com.lucas.controle_validade.Dto.response.UserResponseDTO;
-import br.com.lucas.controle_validade.exception.RecursoNaoEncontradoException;
-import br.com.lucas.controle_validade.exception.UsuarioJaExisteException;
+import br.com.lucas.controle_validade.exception.custom.RecursoNaoEncontradoException;
+import br.com.lucas.controle_validade.exception.custom.UsuarioJaExisteException;
 import br.com.lucas.controle_validade.model.User;
 import br.com.lucas.controle_validade.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -33,5 +33,9 @@ public class UserService {
         User user = repository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
         repository.delete(user);
+    }
+
+    public UserResponseDTO buscaUsuarioPeloNome(String nome) {
+        return repository.findByNome(nome);
     }
 }

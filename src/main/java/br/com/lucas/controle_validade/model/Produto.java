@@ -27,20 +27,18 @@ public class Produto {
     @NotNull
     private UUID id;
 
-    @NotBlank
     private String nome;
 
-    @NotBlank
+
     private String descricao;
 
-    @NotBlank
+
     private String marca;
 
-    @NotBlank
+
     private String categoria;
 
     @ManyToOne
-    @JoinColumn(name  = "estabelecimento_id")
     private Estabelecimento estabelecimento;
 
 
@@ -49,7 +47,8 @@ public class Produto {
 
     @OneToMany(mappedBy = "produto",
             cascade = CascadeType.ALL,
-            orphanRemoval = true)
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
     private List<Lote> lotes = new ArrayList<>();
 
     public Produto(ProdutoRequestDTO produtoRequestDTO, Estabelecimento estabelecimento) {

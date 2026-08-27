@@ -24,18 +24,18 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @NotNull
+
     private UUID id;
 
-    @NotBlank
+
     @Column(unique = true)
     private String nome;
 
-    @NotBlank
+
     @Column(unique = true)
     private String email;
 
-    @NotBlank
+
     private String senha;
 
     @NotNull
@@ -43,7 +43,8 @@ public class User {
 
     @OneToMany(mappedBy = "user",
             cascade = CascadeType.ALL,
-            orphanRemoval = true)
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
     private List<Estabelecimento> Estabelecimentos = new ArrayList<>();
 
     public User(UserRequestDTO userRequestDTO) {

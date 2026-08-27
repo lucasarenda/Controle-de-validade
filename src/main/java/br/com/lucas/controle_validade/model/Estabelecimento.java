@@ -23,28 +23,23 @@ public class Estabelecimento {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @NotBlank
     private String nome;
 
-    @NotBlank
     private String email;
 
-    @NotBlank
     private String cnpj;
 
-    @NotBlank
     private String telefone;
 
-    @NotBlank
     private String endereco;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
     @OneToMany(mappedBy = "estabelecimento",
             cascade = CascadeType.ALL,
-            orphanRemoval = true)
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
     private List<Produto> produtos = new ArrayList<>();
 
     public Estabelecimento(EstabelecimentoRequestDTO estabelecimentoRequestDTO,User usuario) {

@@ -13,8 +13,16 @@ public record LoteResponseDTO(
         UUID produtoId, long diasParaVencimento, StatusValidade status
 ) {
     public LoteResponseDTO(Lote lote, long dias, StatusValidade status) {
-        this(lote.getId(), lote.getNumeroLote(), lote.getQuantidade(), lote.getCustoUnitario(),
-                lote.getDataEntrada(), lote.getDataValidade(), lote.getEndereco(),
-                lote.getProduto().getId(), dias, status);
+        this(
+                lote.getId(),
+                lote.getNumeroLote(),
+                lote.getQuantidade(),
+                lote.getCustoUnitario(),
+                lote.getDataEntrada(),
+                lote.getDataValidade(),
+                lote.getEndereco(),
+                lote.getProduto().getId(),
+                dias,
+                status);
     }
 }

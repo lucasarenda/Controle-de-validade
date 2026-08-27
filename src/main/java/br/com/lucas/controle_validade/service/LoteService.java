@@ -2,8 +2,8 @@ package br.com.lucas.controle_validade.service;
 
 import br.com.lucas.controle_validade.Dto.request.LoteRequestDTO;
 import br.com.lucas.controle_validade.Dto.response.LoteResponseDTO;
-import br.com.lucas.controle_validade.exception.ProdutoNaoPossuiLotesException;
-import br.com.lucas.controle_validade.exception.RecursoNaoEncontradoException;
+import br.com.lucas.controle_validade.exception.custom.ProdutoNaoPossuiLotesException;
+import br.com.lucas.controle_validade.exception.custom.RecursoNaoEncontradoException;
 import br.com.lucas.controle_validade.model.Lote;
 import br.com.lucas.controle_validade.model.Produto;
 import br.com.lucas.controle_validade.model.StatusValidade;
@@ -45,6 +45,7 @@ public class LoteService {
     }
 
     public void removerLote(UUID id) {
+
         repository.delete(buscarLote(id));
     }
 
@@ -55,8 +56,8 @@ public class LoteService {
     public StatusValidade calcularStatus(Lote lote) {
         long dias = calcularDiasParaVencimento(lote);
         if (dias < 0) return StatusValidade.VENCIDO;
-        if (dias <= 2) return StatusValidade.CRITICO;
-        if (dias <= 4) return StatusValidade.PROXIMO_VENCIMENTO;
+        if (dias <= 4) return StatusValidade.CRITICO;
+        if (dias <= 7) return StatusValidade.PROXIMO_VENCIMENTO;
         return StatusValidade.NORMAL;
     }
 
