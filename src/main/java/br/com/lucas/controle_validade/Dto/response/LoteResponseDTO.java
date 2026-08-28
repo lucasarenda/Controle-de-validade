@@ -8,9 +8,16 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 public record LoteResponseDTO(
-        UUID id, String numeroLote, Integer quantidade, BigDecimal custoUnitario,
-        LocalDate dataEntrada, LocalDate dataValidade, String endereco,
-        UUID produtoId, long diasParaVencimento, StatusValidade status
+        UUID id,
+        String numeroLote,
+        Integer quantidade,
+        BigDecimal custoUnitario,
+        LocalDate dataEntrada,
+        LocalDate dataValidade,
+        String endereco,
+        UUID produtoId,
+        long diasParaVencimento,
+        StatusValidade status
 ) {
     public LoteResponseDTO(Lote lote, long dias, StatusValidade status) {
         this(

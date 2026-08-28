@@ -2,13 +2,14 @@ package br.com.lucas.controle_validade.service;
 
 import br.com.lucas.controle_validade.Dto.request.LoteRequestDTO;
 import br.com.lucas.controle_validade.Dto.response.LoteResponseDTO;
-import br.com.lucas.controle_validade.exception.custom.ProdutoNaoPossuiLotesException;
 import br.com.lucas.controle_validade.exception.custom.RecursoNaoEncontradoException;
 import br.com.lucas.controle_validade.model.Lote;
 import br.com.lucas.controle_validade.model.Produto;
 import br.com.lucas.controle_validade.model.StatusValidade;
 import br.com.lucas.controle_validade.repository.LoteRepository;
 import br.com.lucas.controle_validade.repository.ProdutoRepository;
+import br.com.lucas.controle_validade.validation.ValidacaoProdutoPossuiLotes;
+import br.com.lucas.controle_validade.validation.ValidacaoNumeroLoteUnico;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -20,27 +21,33 @@ import java.util.UUID;
 public class LoteService {
     private final LoteRepository repository;
     private final ProdutoRepository produtoRepository;
+    private final ValidacaoProdutoPossuiLotes validacaoProdutoPossuiLotes;
+    private final ValidacaoNumeroLoteUnico validacaoNumeroLoteUnico;
 
-    public LoteService(LoteRepository repository, ProdutoRepository produtoRepository) {
+    public LoteService(LoteRepository repository, ProdutoRepository produtoRepository,
+                       ValidacaoProdutoPossuiLotes validacaoProdutoPossuiLotes,
+                       ValidacaoNumeroLoteUnico validacaoNumeroLoteUnico) {
         this.repository = repository;
         this.produtoRepository = produtoRepository;
+        this.validacaoProdutoPossuiLotes = validacaoProdutoPossuiLotes;
+        this.validacaoNumeroLoteUnico = validacaoNumeroLoteUnico;
     }
 
     public LoteResponseDTO cadastrarLote(LoteRequestDTO dto) {
         Produto produto = produtoRepository.findById(dto.produtoId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Produto não encontrado"));
+        validacaoNumeroLoteUnico.validar(dto);
         return converter(repository.save(new Lote(dto, produto)));
     }
 
     public List<LoteResponseDTO> buscaLotesPorProduto(UUID produtoId) {
         List<Lote> lotes = repository.findByProduto_Id(produtoId);
-        if (lotes.isEmpty()) {
-            throw new ProdutoNaoPossuiLotesException("Produto não possui lotes cadastrados");
-        }
+        validacaoProdutoPossuiLotes.validar(lotes);
         return lotes.stream().map(this::converter).toList();
     }
 
     public LoteResponseDTO buscaLotePorId(UUID id) {
+
         return converter(buscarLote(id));
     }
 

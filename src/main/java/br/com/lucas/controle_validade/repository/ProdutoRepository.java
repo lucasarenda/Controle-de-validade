@@ -9,4 +9,6 @@ import java.util.UUID;
 
 public interface ProdutoRepository extends JpaRepository<Produto, UUID> {
     List<Produto> findByEstabelecimento_Id(UUID id);
+
+    boolean existsByNome(String nome);
 }

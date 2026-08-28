@@ -8,4 +8,6 @@ import java.util.UUID;
 
 public interface LoteRepository extends JpaRepository<Lote, UUID> {
     List<Lote> findByProduto_Id(UUID produtoId);
+
+    boolean existsByNumeroLote(String numeroLote);
 }

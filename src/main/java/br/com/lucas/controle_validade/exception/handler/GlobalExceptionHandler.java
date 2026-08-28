@@ -14,11 +14,11 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler(UsuarioJaExisteException.class)
-    public ResponseEntity<ResponseError> handleEmailJaCadastrado(UsuarioJaExisteException exception) {
+    @ExceptionHandler(RecursoJaExisteException.class)
+    public ResponseEntity<ResponseError> recursoJaExiste(RecursoJaExisteException exception) {
 
         ResponseError response = new ResponseError(
-                exception.getMessage(),HttpStatus.NOT_FOUND, LocalDateTime.now()
+                exception.getMessage(), HttpStatus.CONFLICT, LocalDateTime.now()
         );
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
