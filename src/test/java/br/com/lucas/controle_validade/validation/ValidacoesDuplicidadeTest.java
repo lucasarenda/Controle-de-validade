@@ -3,10 +3,12 @@ package br.com.lucas.controle_validade.validation;
 import br.com.lucas.controle_validade.Dto.request.EstabelecimentoRequestDTO;
 import br.com.lucas.controle_validade.Dto.request.LoteRequestDTO;
 import br.com.lucas.controle_validade.Dto.request.ProdutoRequestDTO;
+import br.com.lucas.controle_validade.Dto.request.UserRequestDTO;
 import br.com.lucas.controle_validade.exception.custom.RecursoJaExisteException;
 import br.com.lucas.controle_validade.repository.EstabelecimentoRepository;
 import br.com.lucas.controle_validade.repository.LoteRepository;
 import br.com.lucas.controle_validade.repository.ProdutoRepository;
+import br.com.lucas.controle_validade.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -32,10 +34,17 @@ class ValidacoesDuplicidadeTest {
     @Mock
     private LoteRepository loteRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     @Test
     void deveImpedirProdutoComNomeJaCadastrado() {
         ProdutoRequestDTO dto = new ProdutoRequestDTO(
-                "Arroz", "Arroz branco", "Marca", "Alimento", UUID.randomUUID()
+                "Arroz",
+                "Arroz branco",
+                "Marca",
+                "Alimento",
+                UUID.randomUUID()
         );
         when(produtoRepository.existsByNome(dto.nome())).thenReturn(true);
 
@@ -50,7 +59,12 @@ class ValidacoesDuplicidadeTest {
     @Test
     void deveImpedirEstabelecimentoComNomeJaCadastrado() {
         EstabelecimentoRequestDTO dto = new EstabelecimentoRequestDTO(
-                "Mercado", "mercado@email.com", "123", "9999", "Rua A", UUID.randomUUID()
+                "Mercado",
+                "mercado@email.com",
+                "123",
+                "9999",
+                "Rua A",
+                UUID.randomUUID()
         );
         when(estabelecimentoRepository.existsByNome(dto.nome())).thenReturn(true);
 
@@ -65,8 +79,13 @@ class ValidacoesDuplicidadeTest {
     @Test
     void deveImpedirLoteComNumeroJaCadastrado() {
         LoteRequestDTO dto = new LoteRequestDTO(
-                "LOTE-1", 1, BigDecimal.ONE, LocalDate.now(), LocalDate.now().plusDays(1),
-                "Prateleira A", UUID.randomUUID()
+                "LOTE-1",
+                1,
+                BigDecimal.ONE,
+                LocalDate.now(),
+                LocalDate.now().plusDays(1),
+                "Prateleira A",
+                UUID.randomUUID()
         );
         when(loteRepository.existsByNumeroLote(dto.numeroLote())).thenReturn(true);
 
@@ -76,5 +95,21 @@ class ValidacoesDuplicidadeTest {
         );
 
         assertEquals("Já existe um lote cadastrado com este número", exception.getMessage());
+    }
+
+    @Test
+    void deveImpedirUsuarioJaCadastrado() {
+        UserRequestDTO dto = new UserRequestDTO(
+                "lucas",
+                "lucas.arenda@gmail.com",
+                "0102"
+        );
+        when(userRepository.existsByEmail(dto.email())).thenReturn(true);
+
+        RecursoJaExisteException exception = assertThrows(
+                RecursoJaExisteException.class,
+                () -> new ValidacaoEmailUsuarioUnico(userRepository).validar(dto)
+        );
+        assertEquals("Já existe um usuário cadastrado com este email", exception.getMessage());
     }
 }

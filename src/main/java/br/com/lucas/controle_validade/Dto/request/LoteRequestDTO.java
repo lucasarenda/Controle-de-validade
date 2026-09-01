@@ -17,17 +17,10 @@ public record LoteRequestDTO(
         @DecimalMin("0.0") BigDecimal custoUnitario,
 
         @NotNull
-        @Pattern(
-                regexp = "^\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}$",
-                message = "A data deve estar no formato dd/MM/yyyy HH:mm"
-        )
+        @PastOrPresent
         LocalDate dataEntrada,
 
         @NotNull
-        @Pattern(
-                regexp = "^\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}$",
-                message = "A data deve estar no formato dd/MM/yyyy HH:mm"
-        )
         LocalDate dataValidade,
 
         @NotBlank

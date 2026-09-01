@@ -22,7 +22,7 @@ public class UserController {
     @Transactional
     public ResponseEntity<String> cadastrarUsuario(@RequestBody @Valid UserRequestDTO dto) {
         service.cadastrarUser(dto);
-        return ResponseEntity.ok("Usuario cadastrado com sucesso!!");
+        return ResponseEntity.ok("Usuário cadastrado com sucesso!!");
     }
 
     @GetMapping

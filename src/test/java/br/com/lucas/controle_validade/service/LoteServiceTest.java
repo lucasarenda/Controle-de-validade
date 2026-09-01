@@ -22,9 +22,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -57,7 +59,7 @@ class LoteServiceTest {
         lote.setDataValidade(LocalDate.now().minusDays(1));
 
         StatusValidade status = service.calcularStatus(lote);
-        assertEquals(StatusValidade.VENCIDO,status);
+        assertEquals(StatusValidade.VENCIDO, status);
     }
 
     @Test
@@ -67,7 +69,7 @@ class LoteServiceTest {
         lote.setDataValidade(LocalDate.now().plusDays(4));
 
         StatusValidade status = service.calcularStatus(lote);
-        assertEquals(StatusValidade.CRITICO,status);
+        assertEquals(StatusValidade.CRITICO, status);
     }
 
     @Test
@@ -77,7 +79,7 @@ class LoteServiceTest {
         lote.setDataValidade(LocalDate.now().plusDays(7));
 
         StatusValidade status = service.calcularStatus(lote);
-        assertEquals(StatusValidade.PROXIMO_VENCIMENTO,status);
+        assertEquals(StatusValidade.PROXIMO_VENCIMENTO, status);
     }
 
     @Test
@@ -87,8 +89,9 @@ class LoteServiceTest {
         lote.setDataValidade(LocalDate.now().plusDays(8));
 
         StatusValidade status = service.calcularStatus(lote);
-        assertEquals(StatusValidade.NORMAL,status);
+        assertEquals(StatusValidade.NORMAL, status);
     }
+
     @Test
     void deveCadastrarLote() {
         // Arrange
@@ -149,6 +152,57 @@ class LoteServiceTest {
 
         verify(loteRepository).findById(id);
 
+    }
+
+    @Test
+    void deveBuscarLotesPorProduto() {
+        UUID produtoId = UUID.randomUUID();
+        Produto produto = new Produto();
+        produto.setId(produtoId);
+        Lote lote = new Lote();
+        lote.setProduto(produto);
+        lote.setDataValidade(LocalDate.now().plusDays(10));
+        when(loteRepository.findByProduto_Id(produtoId)).thenReturn(List.of(lote));
+
+        var resultado = service.buscaLotesPorProduto(produtoId);
+
+        assertEquals(1, resultado.size());
+        verify(validacaoProdutoPossuiLotes).validar(List.of(lote));
+    }
+
+    @Test
+    void deveRemoverLote() {
+        UUID id = UUID.randomUUID();
+        Lote lote = new Lote();
+        when(loteRepository.findById(id)).thenReturn(Optional.of(lote));
+
+        service.removerLote(id);
+
+        verify(loteRepository).delete(lote);
+    }
+
+    @Test
+    void deveValidarNumeroAntesDeCadastrarLote() {
+        UUID produtoId = UUID.randomUUID();
+        Produto produto = new Produto();
+        produto.setId(produtoId);
+        var dto = new LoteRequestDTO(
+                "LOTE-1",
+                1,
+                BigDecimal.ONE,
+                LocalDate.now(),
+                LocalDate.now().plusDays(10),
+                "Prateleira",
+                produtoId
+        );
+        when(produtoRepository.findById(produtoId))
+                .thenReturn(Optional.of(produto));
+        when(loteRepository.save(any(Lote.class)))
+                .thenAnswer(i -> i.getArgument(0));
+
+        service.cadastrarLote(dto);
+
+        verify(validacaoNumeroLoteUnico).validar(dto);
     }
 
 }

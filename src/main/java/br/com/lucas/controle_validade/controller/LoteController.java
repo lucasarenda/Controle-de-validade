@@ -16,7 +16,9 @@ import java.util.UUID;
 public class LoteController {
     private final LoteService service;
 
-    public LoteController(LoteService service) { this.service = service; }
+    public LoteController(LoteService service) {
+        this.service = service;
+    }
 
     @PostMapping
     @Transactional
@@ -25,13 +27,13 @@ public class LoteController {
     }
 
     @GetMapping("/{id}")
-    public LoteResponseDTO buscaLotePorId(@PathVariable UUID id) {
-        return service.buscaLotePorId(id);
+    public ResponseEntity<LoteResponseDTO> buscaLotePorId(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.buscaLotePorId(id));
     }
 
     @GetMapping("/produto/{produtoId}")
-    public List<LoteResponseDTO> buscaLotesPorProduto(@PathVariable UUID produtoId) {
-        return service.buscaLotesPorProduto(produtoId);
+    public ResponseEntity<List<LoteResponseDTO>> buscaLotesPorProduto(@PathVariable UUID produtoId) {
+        return ResponseEntity.ok(service.buscaLotesPorProduto(produtoId));
     }
 
     @DeleteMapping("/{id}")
