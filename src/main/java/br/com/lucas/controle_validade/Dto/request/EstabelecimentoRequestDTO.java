@@ -5,23 +5,23 @@ import jakarta.validation.constraints.*;
 import java.util.UUID;
 
 public record EstabelecimentoRequestDTO(
-        @NotBlank
+        @NotBlank(message = "Nome é obrigatório")
         String nome,
 
-        @NotBlank
-        @Email
+        @NotBlank(message = "Email é obrigatório")
+        @Email(message = "Email inválido")
         String email,
 
-        @NotBlank
+        @NotBlank(message = "CNPJ é obrigatório")
         String cnpj,
 
-        @NotBlank
+        @NotBlank(message = "Telefone é obrigatório")
         String telefone,
 
-        @NotBlank
+        @NotBlank(message = "Endereço é obrigatório")
         String endereco,
 
-        @NotNull
+        @NotNull(message = "Id do usuário é obrigatório")
         UUID usuarioId
 
 ) {

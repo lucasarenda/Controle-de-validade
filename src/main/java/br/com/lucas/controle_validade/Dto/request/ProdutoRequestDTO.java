@@ -6,19 +6,19 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 public record ProdutoRequestDTO(
-        @NotBlank
+        @NotBlank(message = "Nome obrigatório.")
         String nome,
 
-        @NotBlank
+        @NotBlank(message = "Descrição obrigatório.")
         String descricao,
 
-        @NotBlank
+        @NotBlank(message = "Marca obrigatório.")
         String marca,
 
-        @NotBlank
+        @NotBlank(message = "Categoria obrigatório.")
         String categoria,
 
-        @NotNull
+        @NotNull(message = "Id do estabelecimento obrigatório.")
         UUID estabelecimentoId
 ) {
 }

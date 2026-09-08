@@ -7,26 +7,28 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 public record LoteRequestDTO(
-        @NotBlank
+        @NotBlank(message = "Número do lote é obrigatório")
         String numeroLote,
 
-        @NotNull
-        @Positive Integer quantidade,
+        @NotNull(message = "Quantidade é obrigatória")
+        @Positive(message = "Quantidade deve ser maior que zero")
+        Integer quantidade,
 
-        @NotNull
-        @DecimalMin("0.0") BigDecimal custoUnitario,
+        @NotNull(message = "Custo unitário é obrigatório")
+        @DecimalMin(value = "0.0", message = "Custo unitário não pode ser negativo")
+        BigDecimal custoUnitario,
 
-        @NotNull
-        @PastOrPresent
+        @NotNull(message = "Data de entrada é obrigatória")
+        @PastOrPresent(message = "Data de entrada não pode estar no futuro")
         LocalDate dataEntrada,
 
-        @NotNull
+        @NotNull(message = "Data de validade é obrigatória")
         LocalDate dataValidade,
 
-        @NotBlank
+        @NotBlank(message = "Endereço é obrigatório")
         String endereco,
 
-        @NotNull
+        @NotNull(message = "Id do produto é obrigatório")
         UUID produtoId
 ) {
 }

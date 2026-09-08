@@ -24,10 +24,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
-    @ExceptionHandler({UsuarioNaoPossuiEstabelecimentoException.class,
+    @ExceptionHandler({
+            UsuarioNaoPossuiEstabelecimentoException.class,
             EstabelecimentoNaoPossuiProdutosException.class,
             ProdutoNaoPossuiLotesException.class,
-            RecursoNaoEncontradoException.class})
+            RecursoNaoEncontradoException.class
+    })
 
     public ResponseEntity<ResponseError> recursoNaoEncontrado(RuntimeException exception) {
 
