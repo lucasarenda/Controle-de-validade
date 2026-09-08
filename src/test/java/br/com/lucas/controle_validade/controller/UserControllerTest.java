@@ -5,9 +5,9 @@ import br.com.lucas.controle_validade.Dto.response.UserResponseDTO;
 import br.com.lucas.controle_validade.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -17,11 +17,12 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(UserController.class)
+@WithMockUser
 class UserControllerTest {
     @Autowired
     private MockMvc mvc;
@@ -42,6 +43,7 @@ class UserControllerTest {
 
         mvc.perform(
                 post("/users/cadastrar")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json)
                 )
@@ -94,6 +96,7 @@ class UserControllerTest {
 
         mvc.perform(
                 delete("/users/{id}", id)
+                        .with(csrf())
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().string("Usuário removido com sucesso!!"));

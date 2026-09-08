@@ -5,9 +5,9 @@ import br.com.lucas.controle_validade.Dto.response.ProdutoResponseDTO;
 import br.com.lucas.controle_validade.service.ProdutoService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -17,11 +17,12 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(ProdutoController.class)
+@WithMockUser
 class ProdutoControllerTest {
     @Autowired
     private MockMvc mvc;
@@ -46,6 +47,7 @@ class ProdutoControllerTest {
 
         mvc.perform(
                 post("/produtos")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json)
                 )
@@ -85,6 +87,7 @@ class ProdutoControllerTest {
 
         mvc.perform(
                 delete("/produtos/{id}", id)
+                        .with(csrf())
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().string("Produto removido com sucesso!!"));

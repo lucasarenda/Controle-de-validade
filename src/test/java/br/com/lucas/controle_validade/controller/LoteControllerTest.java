@@ -6,9 +6,9 @@ import br.com.lucas.controle_validade.model.StatusValidade;
 import br.com.lucas.controle_validade.service.LoteService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -19,15 +19,14 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-public class LoteControllerTest {
+@WebMvcTest(LoteController.class)
+@WithMockUser
+class LoteControllerTest {
 
     @Autowired
     private MockMvc mvc;
@@ -37,9 +36,9 @@ public class LoteControllerTest {
 
     @Test
     void confirmaCadastroDoLote() throws Exception {
-        //Arrange
         UUID produtoId = UUID.randomUUID();
         UUID loteId = UUID.randomUUID();
+
         String json = """
                 {
                   "numeroLote": "LOTE-001",
@@ -51,6 +50,7 @@ public class LoteControllerTest {
                   "produtoId": "%s"
                 }
                 """.formatted(produtoId);
+
         LoteResponseDTO responseDTO = new LoteResponseDTO(
                 loteId,
                 "LOTE-001",
@@ -63,12 +63,13 @@ public class LoteControllerTest {
                 30L,
                 StatusValidade.NORMAL
         );
-        //ACT
+
         when(loteService.cadastrarLote(any(LoteRequestDTO.class)))
                 .thenReturn(responseDTO);
 
         mvc.perform(
                         post("/lotes")
+                                .with(csrf())
                                 .content(json)
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -79,17 +80,15 @@ public class LoteControllerTest {
                 .andExpect(jsonPath("$.custoUnitario").value(7.90))
                 .andExpect(jsonPath("$.endereco").value("Corredor A - Prateleira 2"));
 
-        //Asserts
-        verify(loteService).cadastrarLote(any(LoteRequestDTO.class));
-
+        verify(loteService)
+                .cadastrarLote(any(LoteRequestDTO.class));
     }
-
 
     @Test
     void buscaLotePorId() throws Exception {
-        //Arrange
         UUID produtoId = UUID.randomUUID();
         UUID loteId = UUID.randomUUID();
+
         LoteResponseDTO responseDTO = new LoteResponseDTO(
                 loteId,
                 "LOTE-001",
@@ -102,25 +101,23 @@ public class LoteControllerTest {
                 30L,
                 StatusValidade.NORMAL
         );
-        //ACT
+
         when(loteService.buscaLotePorId(loteId))
                 .thenReturn(responseDTO);
 
         mvc.perform(
-                get("/lotes/{id}",loteId)
+                        get("/lotes/{id}", loteId)
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(loteId.toString()))
                 .andExpect(jsonPath("$.numeroLote").value("LOTE-001"))
                 .andExpect(jsonPath("$.quantidade").value(50));
 
-        //ASSERT
         verify(loteService).buscaLotePorId(loteId);
     }
 
     @Test
-    void buscaLotePorProduto() throws Exception{
-        //Arrange
+    void buscaLotePorProduto() throws Exception {
         List<LoteResponseDTO> lotes = new ArrayList<>();
 
         UUID produtoId = UUID.randomUUID();
@@ -139,6 +136,7 @@ public class LoteControllerTest {
                 30L,
                 StatusValidade.NORMAL
         );
+
         LoteResponseDTO responseDTO2 = new LoteResponseDTO(
                 loteId2,
                 "LOTE-002",
@@ -155,50 +153,34 @@ public class LoteControllerTest {
         lotes.add(responseDTO1);
         lotes.add(responseDTO2);
 
-        //Act
         when(loteService.buscaLotesPorProduto(produtoId))
                 .thenReturn(lotes);
 
         mvc.perform(
-                get("/lotes/produto/{produtoId}",produtoId)
-        )
+                        get("/lotes/produto/{produtoId}", produtoId)
+                )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].numeroLote").value("LOTE-001"))
                 .andExpect(jsonPath("$[1].numeroLote").value("LOTE-002"));
-        //Assert
+
         verify(loteService).buscaLotesPorProduto(produtoId);
     }
 
     @Test
-    void Removelote() throws Exception {
-        //Arrange
-
-        UUID produtoId = UUID.randomUUID();
+    void removeLote() throws Exception {
         UUID loteId = UUID.randomUUID();
 
-        LoteResponseDTO responseDTO = new LoteResponseDTO(
-                loteId,
-                "LOTE-001",
-                50,
-                new BigDecimal("7.90"),
-                LocalDate.of(2026, 8, 24),
-                LocalDate.of(2026, 9, 30),
-                "Corredor A - Prateleira 2",
-                produtoId,
-                30L,
-                StatusValidade.NORMAL
-        );
+        doNothing()
+                .when(loteService)
+                .removerLote(loteId);
 
-        //Act
-        doNothing().when(loteService).removerLote(loteId);
         mvc.perform(
-                delete("/lotes/{id}",loteId)
-        )
+                        delete("/lotes/{id}", loteId)
+                                .with(csrf())
+                )
                 .andExpect(status().isOk())
                 .andExpect(content().string("Lote removido com sucesso!!"));
 
-        //Assert
         verify(loteService).removerLote(loteId);
-
     }
 }

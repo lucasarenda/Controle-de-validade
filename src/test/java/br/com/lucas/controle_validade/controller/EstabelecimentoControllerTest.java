@@ -5,9 +5,9 @@ import br.com.lucas.controle_validade.Dto.response.EstabelecimentoResponseDTO;
 import br.com.lucas.controle_validade.service.EstabelecimentoService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -16,12 +16,14 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(EstabelecimentoController.class)
+@WithMockUser
 class EstabelecimentoControllerTest {
+
     @Autowired
     private MockMvc mvc;
 
@@ -45,14 +47,16 @@ class EstabelecimentoControllerTest {
                 """.formatted(usuarioId);
 
         mvc.perform(
-                post("/estabelecimentos")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json)
+                        post("/estabelecimentos")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(json)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().string("Estabelecimento cadastrado com sucesso!!"));
 
-        verify(service).cadastrarEstabelecimento(any(EstabelecimentoRequestDTO.class));
+        verify(service)
+                .cadastrarEstabelecimento(any(EstabelecimentoRequestDTO.class));
     }
 
     @Test
@@ -69,11 +73,12 @@ class EstabelecimentoControllerTest {
                 "Rua A",
                 usuarioId
         );
+
         when(service.buscaEstabelecimentoPorUsuario(usuarioId))
                 .thenReturn(List.of(dto));
 
         mvc.perform(
-                get("/estabelecimentos/{id}", usuarioId)
+                        get("/estabelecimentos/{id}", usuarioId)
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].nome").value("Mercado"))
@@ -82,10 +87,12 @@ class EstabelecimentoControllerTest {
 
     @Test
     void deveRemoverEstabelecimento() throws Exception {
+
         UUID id = UUID.randomUUID();
 
         mvc.perform(
-                delete("/estabelecimentos/{id}", id)
+                        delete("/estabelecimentos/{id}", id)
+                                .with(csrf())
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().string("Estabelecimento removido com sucesso!!"));
