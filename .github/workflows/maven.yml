@@ -20,5 +20,8 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Give execute permission to mvnw
+        run: chmod +x mvnw
+
       - name: Build and test with Maven
         run: ./mvnw -B verify
