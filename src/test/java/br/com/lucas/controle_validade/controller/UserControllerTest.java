@@ -1,6 +1,7 @@
 package br.com.lucas.controle_validade.controller;
 
 import br.com.lucas.controle_validade.Dto.request.UserRequestDTO;
+import br.com.lucas.controle_validade.Dto.request.UserUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.UserResponseDTO;
 import br.com.lucas.controle_validade.service.UserService;
 import org.junit.jupiter.api.Test;
@@ -102,5 +103,23 @@ class UserControllerTest {
                 .andExpect(content().string("Usuário removido com sucesso!!"));
 
         verify(service).removerUser(id);
+    }
+
+    @Test
+    void deveAtualizarUsuarioParcialmente() throws Exception {
+        UUID id = UUID.randomUUID();
+        var response = new UserResponseDTO(id, "Lucas Silva", "lucas@email.com", LocalDateTime.now());
+        when(service.atualizarUser(eq(id), any(UserUpdateDTO.class))).thenReturn(response);
+
+        mvc.perform(patch("/usuarios/{id}", id)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\":\"Lucas Silva\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id.toString()))
+                .andExpect(jsonPath("$.nome").value("Lucas Silva"))
+                .andExpect(jsonPath("$.email").value("lucas@email.com"));
+
+        verify(service).atualizarUser(eq(id), any(UserUpdateDTO.class));
     }
 }

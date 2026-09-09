@@ -1,6 +1,7 @@
 package br.com.lucas.controle_validade.model;
 
 import br.com.lucas.controle_validade.Dto.request.EstabelecimentoRequestDTO;
+import br.com.lucas.controle_validade.Dto.request.EstabelecimentoUpdateDTO;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -49,5 +50,13 @@ public class Estabelecimento {
         this.telefone = estabelecimentoRequestDTO.telefone();
         this.endereco = estabelecimentoRequestDTO.endereco();
         this.user =  usuario;
+    }
+
+    public void atualizar(EstabelecimentoUpdateDTO dto) {
+        if (dto.nome() != null) this.nome = dto.nome();
+        if (dto.email() != null) this.email = dto.email();
+        if (dto.cnpj() != null) this.cnpj = dto.cnpj();
+        if (dto.telefone() != null) this.telefone = dto.telefone();
+        if (dto.endereco() != null) this.endereco = dto.endereco();
     }
 }

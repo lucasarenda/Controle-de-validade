@@ -1,6 +1,7 @@
 package br.com.lucas.controle_validade.service;
 
 import br.com.lucas.controle_validade.Dto.request.LoteRequestDTO;
+import br.com.lucas.controle_validade.Dto.request.LoteUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.LoteResponseDTO;
 import br.com.lucas.controle_validade.exception.custom.RecursoNaoEncontradoException;
 import br.com.lucas.controle_validade.model.Lote;
@@ -54,6 +55,17 @@ public class LoteService {
     public void removerLote(UUID id) {
 
         repository.delete(buscarLote(id));
+    }
+
+    public LoteResponseDTO atualizarLote(UUID id, LoteUpdateDTO dto) {
+        Lote lote = buscarLote(id);
+
+        if (dto.numeroLote() != null && !dto.numeroLote().equals(lote.getNumeroLote())) {
+            validacaoNumeroLoteUnico.validar(dto.numeroLote());
+        }
+
+        lote.atualizar(dto);
+        return converter(repository.save(lote));
     }
 
     public long calcularDiasParaVencimento(Lote lote) {

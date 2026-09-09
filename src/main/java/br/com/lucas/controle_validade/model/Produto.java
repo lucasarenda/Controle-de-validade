@@ -1,6 +1,7 @@
 package br.com.lucas.controle_validade.model;
 
 import br.com.lucas.controle_validade.Dto.request.ProdutoRequestDTO;
+import br.com.lucas.controle_validade.Dto.request.ProdutoUpdateDTO;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -56,5 +57,12 @@ public class Produto {
         this.categoria = produtoRequestDTO.categoria();
         this.estabelecimento = estabelecimento;
         this.dataCadastro = LocalDateTime.now();
+    }
+
+    public void atualizar(ProdutoUpdateDTO dto) {
+        if (dto.nome() != null) this.nome = dto.nome();
+        if (dto.descricao() != null) this.descricao = dto.descricao();
+        if (dto.marca() != null) this.marca = dto.marca();
+        if (dto.categoria() != null) this.categoria = dto.categoria();
     }
 }

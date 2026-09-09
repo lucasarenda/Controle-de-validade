@@ -1,6 +1,7 @@
 package br.com.lucas.controle_validade.controller;
 
 import br.com.lucas.controle_validade.Dto.request.ProdutoRequestDTO;
+import br.com.lucas.controle_validade.Dto.request.ProdutoUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.ProdutoResponseDTO;
 import br.com.lucas.controle_validade.service.ProdutoService;
 import org.junit.jupiter.api.Test;
@@ -93,5 +94,26 @@ class ProdutoControllerTest {
                 .andExpect(content().string("Produto removido com sucesso!!"));
 
         verify(service).removerProduto(id);
+    }
+
+    @Test
+    void deveAtualizarProdutoParcialmente() throws Exception {
+        UUID id = UUID.randomUUID();
+        UUID estabelecimentoId = UUID.randomUUID();
+        var response = new ProdutoResponseDTO(id, "Arroz Integral", "Integral", "Marca",
+                "Alimento", LocalDateTime.now(), estabelecimentoId);
+        when(service.atualizarProduto(eq(id), any(ProdutoUpdateDTO.class))).thenReturn(response);
+
+        mvc.perform(patch("/produtos/{id}", id)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\":\"Arroz Integral\",\"descricao\":\"Integral\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id.toString()))
+                .andExpect(jsonPath("$.nome").value("Arroz Integral"))
+                .andExpect(jsonPath("$.descricao").value("Integral"))
+                .andExpect(jsonPath("$.estabelecimentoId").value(estabelecimentoId.toString()));
+
+        verify(service).atualizarProduto(eq(id), any(ProdutoUpdateDTO.class));
     }
 }

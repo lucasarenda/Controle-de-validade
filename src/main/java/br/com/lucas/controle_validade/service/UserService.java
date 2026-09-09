@@ -1,6 +1,7 @@
 package br.com.lucas.controle_validade.service;
 
 import br.com.lucas.controle_validade.Dto.request.UserRequestDTO;
+import br.com.lucas.controle_validade.Dto.request.UserUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.UserResponseDTO;
 import br.com.lucas.controle_validade.exception.custom.RecursoNaoEncontradoException;
 import br.com.lucas.controle_validade.model.User;
@@ -39,5 +40,17 @@ public class UserService {
 
     public UserResponseDTO buscaUsuarioPeloNome(String nome) {
         return repository.findByNome(nome);
+    }
+
+    public UserResponseDTO atualizarUser(UUID id, UserUpdateDTO dto) {
+        User user = repository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
+
+        if (dto.email() != null && !dto.email().trim().equalsIgnoreCase(user.getEmail())) {
+            validacaoEmailUsuarioUnico.validar(dto.email());
+        }
+
+        user.atualizar(dto);
+        return new UserResponseDTO(repository.save(user));
     }
 }

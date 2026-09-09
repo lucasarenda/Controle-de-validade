@@ -1,6 +1,7 @@
 package br.com.lucas.controle_validade.model;
 
 import br.com.lucas.controle_validade.Dto.request.UserRequestDTO;
+import br.com.lucas.controle_validade.Dto.request.UserUpdateDTO;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -52,6 +53,15 @@ public class User {
         this.email = userRequestDTO.email().trim().toLowerCase();
         this.senha = userRequestDTO.senha();
         this.dataCadastro = LocalDateTime.now();
+    }
+
+    public void atualizar(UserUpdateDTO dto) {
+        if (dto.nome() != null) {
+            this.nome = dto.nome();
+        }
+        if (dto.email() != null) {
+            this.email = dto.email().trim().toLowerCase();
+        }
     }
 
 

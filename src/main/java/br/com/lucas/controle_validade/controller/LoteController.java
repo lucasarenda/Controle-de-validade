@@ -1,6 +1,7 @@
 package br.com.lucas.controle_validade.controller;
 
 import br.com.lucas.controle_validade.Dto.request.LoteRequestDTO;
+import br.com.lucas.controle_validade.Dto.request.LoteUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.LoteResponseDTO;
 import br.com.lucas.controle_validade.service.LoteService;
 import jakarta.validation.Valid;
@@ -41,5 +42,14 @@ public class LoteController {
     public ResponseEntity<String> removerLote(@PathVariable UUID id) {
         service.removerLote(id);
         return ResponseEntity.ok("Lote removido com sucesso!!");
+    }
+
+    @PatchMapping("/{id}")
+    @Transactional
+    public ResponseEntity<LoteResponseDTO> atualizarLote(
+            @PathVariable UUID id,
+            @RequestBody @Valid LoteUpdateDTO dto
+    ) {
+        return ResponseEntity.ok(service.atualizarLote(id, dto));
     }
 }

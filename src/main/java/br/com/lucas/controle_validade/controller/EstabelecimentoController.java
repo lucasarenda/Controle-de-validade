@@ -1,6 +1,7 @@
 package br.com.lucas.controle_validade.controller;
 
 import br.com.lucas.controle_validade.Dto.request.EstabelecimentoRequestDTO;
+import br.com.lucas.controle_validade.Dto.request.EstabelecimentoUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.EstabelecimentoResponseDTO;
 import br.com.lucas.controle_validade.service.EstabelecimentoService;
 import jakarta.validation.Valid;
@@ -39,5 +40,14 @@ public class EstabelecimentoController {
     public ResponseEntity<String> removerEstabelecimento(@PathVariable UUID id) {
         service.removeEstabelecimento(id);
         return ResponseEntity.ok("Estabelecimento removido com sucesso!!");
+    }
+
+    @PatchMapping("/{id}")
+    @Transactional
+    public ResponseEntity<EstabelecimentoResponseDTO> atualizarEstabelecimento(
+            @PathVariable UUID id,
+            @RequestBody @Valid EstabelecimentoUpdateDTO dto
+    ) {
+        return ResponseEntity.ok(service.atualizarEstabelecimento(id, dto));
     }
 }

@@ -1,6 +1,7 @@
 package br.com.lucas.controle_validade.model;
 
 import br.com.lucas.controle_validade.Dto.request.LoteRequestDTO;
+import br.com.lucas.controle_validade.Dto.request.LoteUpdateDTO;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -46,5 +47,14 @@ public class Lote {
         this.dataValidade = dto.dataValidade();
         this.endereco = dto.endereco();
         this.produto = produto;
+    }
+
+    public void atualizar(LoteUpdateDTO dto) {
+        if (dto.numeroLote() != null) this.numeroLote = dto.numeroLote();
+        if (dto.quantidade() != null) this.quantidade = dto.quantidade();
+        if (dto.custoUnitario() != null) this.custoUnitario = dto.custoUnitario();
+        if (dto.dataEntrada() != null) this.dataEntrada = dto.dataEntrada();
+        if (dto.dataValidade() != null) this.dataValidade = dto.dataValidade();
+        if (dto.endereco() != null) this.endereco = dto.endereco();
     }
 }

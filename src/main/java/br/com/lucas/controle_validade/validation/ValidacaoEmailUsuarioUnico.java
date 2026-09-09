@@ -15,7 +15,11 @@ public class ValidacaoEmailUsuarioUnico implements Validacao<UserRequestDTO> {
 
     @Override
     public void validar(UserRequestDTO dto) {
-        if (repository.existsByEmail(dto.email().trim().toLowerCase())) {
+        validar(dto.email());
+    }
+
+    public void validar(String email) {
+        if (repository.existsByEmail(email.trim().toLowerCase())) {
             throw new UsuarioJaExisteException("Já existe um usuário cadastrado com este email");
         }
     }

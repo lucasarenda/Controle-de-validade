@@ -15,7 +15,11 @@ public class ValidacaoNumeroLoteUnico implements Validacao<LoteRequestDTO> {
 
     @Override
     public void validar(LoteRequestDTO dto) {
-        if (repository.existsByNumeroLote(dto.numeroLote())) {
+        validar(dto.numeroLote());
+    }
+
+    public void validar(String numeroLote) {
+        if (repository.existsByNumeroLote(numeroLote)) {
             throw new RecursoJaExisteException("Já existe um lote cadastrado com este número");
         }
     }

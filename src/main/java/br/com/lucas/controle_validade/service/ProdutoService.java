@@ -1,6 +1,7 @@
 package br.com.lucas.controle_validade.service;
 
 import br.com.lucas.controle_validade.Dto.request.ProdutoRequestDTO;
+import br.com.lucas.controle_validade.Dto.request.ProdutoUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.ProdutoResponseDTO;
 import br.com.lucas.controle_validade.exception.custom.RecursoNaoEncontradoException;
 import br.com.lucas.controle_validade.model.Estabelecimento;
@@ -48,5 +49,17 @@ public class ProdutoService {
         Produto produto = repository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Produto não encontrado"));
         repository.delete(produto);
+    }
+
+    public ProdutoResponseDTO atualizarProduto(UUID id, ProdutoUpdateDTO dto) {
+        Produto produto = repository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Produto não encontrado"));
+
+        if (dto.nome() != null && !dto.nome().equals(produto.getNome())) {
+            validacaoNomeProdutoUnico.validar(dto.nome());
+        }
+
+        produto.atualizar(dto);
+        return new ProdutoResponseDTO(repository.save(produto));
     }
 }

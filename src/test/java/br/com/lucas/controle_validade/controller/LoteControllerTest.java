@@ -1,6 +1,7 @@
 package br.com.lucas.controle_validade.controller;
 
 import br.com.lucas.controle_validade.Dto.request.LoteRequestDTO;
+import br.com.lucas.controle_validade.Dto.request.LoteUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.LoteResponseDTO;
 import br.com.lucas.controle_validade.model.StatusValidade;
 import br.com.lucas.controle_validade.service.LoteService;
@@ -182,5 +183,27 @@ class LoteControllerTest {
                 .andExpect(content().string("Lote removido com sucesso!!"));
 
         verify(loteService).removerLote(loteId);
+    }
+
+    @Test
+    void deveAtualizarLoteParcialmente() throws Exception {
+        UUID loteId = UUID.randomUUID();
+        UUID produtoId = UUID.randomUUID();
+        var response = new LoteResponseDTO(loteId, "LOTE-002", 25, new BigDecimal("7.90"),
+                LocalDate.of(2026, 8, 24), LocalDate.of(2026, 9, 30), "Prateleira 3",
+                produtoId, 30L, StatusValidade.NORMAL);
+        when(loteService.atualizarLote(eq(loteId), any(LoteUpdateDTO.class))).thenReturn(response);
+
+        mvc.perform(patch("/lotes/{id}", loteId)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"numeroLote\":\"LOTE-002\",\"quantidade\":25,\"endereco\":\"Prateleira 3\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(loteId.toString()))
+                .andExpect(jsonPath("$.numeroLote").value("LOTE-002"))
+                .andExpect(jsonPath("$.quantidade").value(25))
+                .andExpect(jsonPath("$.produtoId").value(produtoId.toString()));
+
+        verify(loteService).atualizarLote(eq(loteId), any(LoteUpdateDTO.class));
     }
 }

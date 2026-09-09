@@ -15,7 +15,11 @@ public class ValidacaoNomeEstabelecimentoUnico implements Validacao<Estabelecime
 
     @Override
     public void validar(EstabelecimentoRequestDTO dto) {
-        if (repository.existsByNome(dto.nome())) {
+        validar(dto.nome());
+    }
+
+    public void validar(String nome) {
+        if (repository.existsByNome(nome)) {
             throw new RecursoJaExisteException("Já existe um estabelecimento cadastrado com este nome");
         }
     }

@@ -1,6 +1,7 @@
 package br.com.lucas.controle_validade.controller;
 
 import br.com.lucas.controle_validade.Dto.request.ProdutoRequestDTO;
+import br.com.lucas.controle_validade.Dto.request.ProdutoUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.ProdutoResponseDTO;
 import br.com.lucas.controle_validade.service.ProdutoService;
 import jakarta.validation.Valid;
@@ -35,5 +36,14 @@ public class ProdutoController {
     public ResponseEntity<String> removerProduto(@PathVariable UUID id) {
         service.removerProduto(id);
         return ResponseEntity.ok("Produto removido com sucesso!!");
+    }
+
+    @PatchMapping("/{id}")
+    @Transactional
+    public ResponseEntity<ProdutoResponseDTO> atualizarProduto(
+            @PathVariable UUID id,
+            @RequestBody @Valid ProdutoUpdateDTO dto
+    ) {
+        return ResponseEntity.ok(service.atualizarProduto(id, dto));
     }
 }

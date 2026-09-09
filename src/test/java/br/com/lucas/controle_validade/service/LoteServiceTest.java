@@ -1,10 +1,12 @@
 package br.com.lucas.controle_validade.service;
 
 import br.com.lucas.controle_validade.Dto.request.LoteRequestDTO;
+import br.com.lucas.controle_validade.Dto.request.LoteUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.LoteResponseDTO;
 import br.com.lucas.controle_validade.model.Lote;
 import br.com.lucas.controle_validade.model.Produto;
 import br.com.lucas.controle_validade.model.StatusValidade;
+import br.com.lucas.controle_validade.exception.custom.RecursoNaoEncontradoException;
 import br.com.lucas.controle_validade.repository.LoteRepository;
 import br.com.lucas.controle_validade.repository.ProdutoRepository;
 import br.com.lucas.controle_validade.validation.ValidacaoProdutoPossuiLotes;
@@ -29,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -203,6 +206,62 @@ class LoteServiceTest {
         service.cadastrarLote(dto);
 
         verify(validacaoNumeroLoteUnico).validar(dto);
+    }
+
+    @Test
+    void deveAtualizarSomenteQuantidadeDoLote() {
+        UUID id = UUID.randomUUID();
+        Produto produto = new Produto();
+        produto.setId(UUID.randomUUID());
+        Lote lote = lote(id, produto);
+        when(loteRepository.findById(id)).thenReturn(Optional.of(lote));
+        when(loteRepository.save(lote)).thenReturn(lote);
+
+        var resultado = service.atualizarLote(id,
+                new LoteUpdateDTO(null, 25, null, null, null, null));
+
+        assertEquals(25, resultado.quantidade());
+        assertEquals("LOTE-1", resultado.numeroLote());
+        assertEquals(new BigDecimal("10.00"), resultado.custoUnitario());
+        verify(loteRepository).save(lote);
+    }
+
+    @Test
+    void deveAtualizarMultiplosCamposDoLoteEPreservarProduto() {
+        UUID id = UUID.randomUUID();
+        Produto produto = new Produto();
+        produto.setId(UUID.randomUUID());
+        Lote lote = lote(id, produto);
+        when(loteRepository.findById(id)).thenReturn(Optional.of(lote));
+        when(loteRepository.save(lote)).thenReturn(lote);
+
+        var resultado = service.atualizarLote(id, new LoteUpdateDTO(
+                "LOTE-2", null, new BigDecimal("12.50"), null,
+                LocalDate.now().plusDays(20), "Prateleira B"));
+
+        assertEquals("LOTE-2", resultado.numeroLote());
+        assertEquals(10, resultado.quantidade());
+        assertEquals(new BigDecimal("12.50"), resultado.custoUnitario());
+        assertEquals("Prateleira B", resultado.endereco());
+        assertEquals(produto.getId(), resultado.produtoId());
+        verify(validacaoNumeroLoteUnico).validar("LOTE-2");
+        verify(loteRepository).save(lote);
+    }
+
+    @Test
+    void deveFalharAoAtualizarLoteInexistente() {
+        UUID id = UUID.randomUUID();
+        when(loteRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(RecursoNaoEncontradoException.class,
+                () -> service.atualizarLote(id,
+                        new LoteUpdateDTO(null, 2, null, null, null, null)));
+        verify(loteRepository, never()).save(any());
+    }
+
+    private Lote lote(UUID id, Produto produto) {
+        return new Lote(id, "LOTE-1", 10, new BigDecimal("10.00"), LocalDate.now(),
+                LocalDate.now().plusDays(10), "Prateleira A", produto);
     }
 
 }

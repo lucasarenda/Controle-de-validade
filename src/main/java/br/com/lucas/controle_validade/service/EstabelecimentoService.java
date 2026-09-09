@@ -1,6 +1,7 @@
 package br.com.lucas.controle_validade.service;
 
 import br.com.lucas.controle_validade.Dto.request.EstabelecimentoRequestDTO;
+import br.com.lucas.controle_validade.Dto.request.EstabelecimentoUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.EstabelecimentoResponseDTO;
 import br.com.lucas.controle_validade.exception.custom.RecursoNaoEncontradoException;
 import br.com.lucas.controle_validade.model.Estabelecimento;
@@ -60,5 +61,17 @@ public class EstabelecimentoService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Estabelecimento não encontrado"));
 
         repositoryEstabelecimento.delete(estabelecimento);
+    }
+
+    public EstabelecimentoResponseDTO atualizarEstabelecimento(UUID id, EstabelecimentoUpdateDTO dto) {
+        Estabelecimento estabelecimento = repositoryEstabelecimento.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Estabelecimento não encontrado"));
+
+        if (dto.nome() != null && !dto.nome().equals(estabelecimento.getNome())) {
+            validacaoNomeEstabelecimentoUnico.validar(dto.nome());
+        }
+
+        estabelecimento.atualizar(dto);
+        return new EstabelecimentoResponseDTO(repositoryEstabelecimento.save(estabelecimento));
     }
 }

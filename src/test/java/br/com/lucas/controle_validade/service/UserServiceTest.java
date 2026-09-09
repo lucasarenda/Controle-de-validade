@@ -1,6 +1,7 @@
 package br.com.lucas.controle_validade.service;
 
 import br.com.lucas.controle_validade.Dto.request.UserRequestDTO;
+import br.com.lucas.controle_validade.Dto.request.UserUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.UserResponseDTO;
 import br.com.lucas.controle_validade.exception.custom.RecursoNaoEncontradoException;
 import br.com.lucas.controle_validade.model.User;
@@ -91,6 +92,50 @@ class UserServiceTest {
 
         assertThrows(RecursoNaoEncontradoException.class, () -> service.removerUser(id));
         verify(repository, never()).delete(any());
+    }
+
+    @Test
+    void deveAtualizarSomenteNomeDoUsuario() {
+        UUID id = UUID.randomUUID();
+        User user = usuario(id, "Lucas");
+        when(repository.findById(id)).thenReturn(Optional.of(user));
+        when(repository.save(user)).thenReturn(user);
+
+        UserResponseDTO resultado = service.atualizarUser(id, new UserUpdateDTO("Lucas Silva", null));
+
+        assertEquals("Lucas Silva", resultado.nome());
+        assertEquals("lucas@email.com", resultado.email());
+        verify(repository).save(user);
+        verifyNoInteractions(validacaoEmailUsuarioUnico);
+    }
+
+    @Test
+    void deveAtualizarNomeEEmailDoUsuarioSemAlterarDemaisCampos() {
+        UUID id = UUID.randomUUID();
+        User user = usuario(id, "Lucas");
+        LocalDateTime dataCadastro = user.getDataCadastro();
+        when(repository.findById(id)).thenReturn(Optional.of(user));
+        when(repository.save(user)).thenReturn(user);
+
+        UserResponseDTO resultado = service.atualizarUser(
+                id, new UserUpdateDTO("Lucas Silva", " NOVO@EMAIL.COM "));
+
+        assertEquals("Lucas Silva", resultado.nome());
+        assertEquals("novo@email.com", resultado.email());
+        assertEquals(dataCadastro, resultado.dataCadastro());
+        assertEquals("123456", user.getSenha());
+        verify(validacaoEmailUsuarioUnico).validar(" NOVO@EMAIL.COM ");
+        verify(repository).save(user);
+    }
+
+    @Test
+    void deveFalharAoAtualizarUsuarioInexistente() {
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(RecursoNaoEncontradoException.class,
+                () -> service.atualizarUser(id, new UserUpdateDTO("Novo nome", null)));
+        verify(repository, never()).save(any());
     }
 
     private User usuario(UUID id, String nome) {

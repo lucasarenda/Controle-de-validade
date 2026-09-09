@@ -15,7 +15,11 @@ public class ValidacaoNomeProdutoUnico implements Validacao<ProdutoRequestDTO> {
 
     @Override
     public void validar(ProdutoRequestDTO dto) {
-        if (repository.existsByNome(dto.nome())) {
+        validar(dto.nome());
+    }
+
+    public void validar(String nome) {
+        if (repository.existsByNome(nome)) {
             throw new RecursoJaExisteException("Já existe um produto cadastrado com este nome");
         }
     }
