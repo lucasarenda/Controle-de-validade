@@ -124,7 +124,7 @@ class UserServiceTest {
         assertEquals("novo@email.com", resultado.email());
         assertEquals(dataCadastro, resultado.dataCadastro());
         assertEquals("123456", user.getSenha());
-        verify(validacaoEmailUsuarioUnico).validar(" NOVO@EMAIL.COM ");
+        verify(validacaoEmailUsuarioUnico).validar("novo@email.com");
         verify(repository).save(user);
     }
 

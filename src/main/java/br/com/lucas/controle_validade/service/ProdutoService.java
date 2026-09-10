@@ -10,6 +10,7 @@ import br.com.lucas.controle_validade.repository.EstabelecimentoRepository;
 import br.com.lucas.controle_validade.repository.ProdutoRepository;
 import br.com.lucas.controle_validade.validation.ValidacaoEstabelecimentoPossuiProdutos;
 import br.com.lucas.controle_validade.validation.ValidacaoNomeProdutoUnico;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,24 +18,22 @@ import java.util.UUID;
 
 @Service
 public class ProdutoService {
-    private final EstabelecimentoRepository repositoryEstabelecimento;
-    private final ProdutoRepository repository;
-    private final ValidacaoEstabelecimentoPossuiProdutos validacaoEstabelecimentoPossuiProdutos;
-    private final ValidacaoNomeProdutoUnico validacaoNomeProdutoUnico;
+    @Autowired
+    private  EstabelecimentoRepository repositoryEstabelecimento;
 
-    public ProdutoService(EstabelecimentoRepository repositoryEstabelecimento, ProdutoRepository repository,
-                          ValidacaoEstabelecimentoPossuiProdutos validacaoEstabelecimentoPossuiProdutos,
-                          ValidacaoNomeProdutoUnico validacaoNomeProdutoUnico) {
-        this.repositoryEstabelecimento = repositoryEstabelecimento;
-        this.repository = repository;
-        this.validacaoEstabelecimentoPossuiProdutos = validacaoEstabelecimentoPossuiProdutos;
-        this.validacaoNomeProdutoUnico = validacaoNomeProdutoUnico;
-    }
+    @Autowired
+    private  ProdutoRepository repository;
+
+    @Autowired
+    private  ValidacaoEstabelecimentoPossuiProdutos validacaoEstabelecimentoPossuiProdutos;
+
+    @Autowired
+    private  ValidacaoNomeProdutoUnico validacaoNomeProdutoUnico;
 
     public ProdutoResponseDTO cadastrarProduto(ProdutoRequestDTO dto) {
         Estabelecimento estabelecimento = repositoryEstabelecimento.findById(dto.estabelecimentoId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Estabelecimento não encontrado"));
-        validacaoNomeProdutoUnico.validar(dto);
+        validacaoNomeProdutoUnico.validar(dto.nome());
         Produto produto = repository.save(new Produto(dto, estabelecimento));
         return new ProdutoResponseDTO(produto);
     }

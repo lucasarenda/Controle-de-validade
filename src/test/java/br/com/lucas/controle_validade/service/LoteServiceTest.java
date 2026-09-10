@@ -3,36 +3,32 @@ package br.com.lucas.controle_validade.service;
 import br.com.lucas.controle_validade.Dto.request.LoteRequestDTO;
 import br.com.lucas.controle_validade.Dto.request.LoteUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.LoteResponseDTO;
+import br.com.lucas.controle_validade.exception.custom.RecursoNaoEncontradoException;
 import br.com.lucas.controle_validade.model.Lote;
 import br.com.lucas.controle_validade.model.Produto;
 import br.com.lucas.controle_validade.model.StatusValidade;
-import br.com.lucas.controle_validade.exception.custom.RecursoNaoEncontradoException;
 import br.com.lucas.controle_validade.repository.LoteRepository;
 import br.com.lucas.controle_validade.repository.ProdutoRepository;
-import br.com.lucas.controle_validade.validation.ValidacaoProdutoPossuiLotes;
 import br.com.lucas.controle_validade.validation.ValidacaoNumeroLoteUnico;
-import org.junit.jupiter.api.BeforeEach;
+import br.com.lucas.controle_validade.validation.ValidacaoProdutoPossuiLotes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.never;
-
 
 @ExtendWith(MockitoExtension.class)
 class LoteServiceTest {
@@ -62,6 +58,7 @@ class LoteServiceTest {
         lote.setDataValidade(LocalDate.now().minusDays(1));
 
         StatusValidade status = service.calcularStatus(lote);
+
         assertEquals(StatusValidade.VENCIDO, status);
     }
 
@@ -72,6 +69,7 @@ class LoteServiceTest {
         lote.setDataValidade(LocalDate.now().plusDays(4));
 
         StatusValidade status = service.calcularStatus(lote);
+
         assertEquals(StatusValidade.CRITICO, status);
     }
 
@@ -82,6 +80,7 @@ class LoteServiceTest {
         lote.setDataValidade(LocalDate.now().plusDays(7));
 
         StatusValidade status = service.calcularStatus(lote);
+
         assertEquals(StatusValidade.PROXIMO_VENCIMENTO, status);
     }
 
@@ -92,12 +91,19 @@ class LoteServiceTest {
         lote.setDataValidade(LocalDate.now().plusDays(8));
 
         StatusValidade status = service.calcularStatus(lote);
+
         assertEquals(StatusValidade.NORMAL, status);
     }
 
     @Test
     void deveCadastrarLote() {
+
         // Arrange
+        UUID produtoId = UUID.randomUUID();
+
+        BDDMockito.given(produto.getId())
+                .willReturn(produtoId);
+
         LoteRequestDTO dto = new LoteRequestDTO(
                 "2",
                 1,
@@ -105,7 +111,7 @@ class LoteServiceTest {
                 LocalDate.of(2026, 8, 28),
                 LocalDate.of(2027, 8, 28),
                 "casado joao",
-                produto.getId()
+                produtoId
         );
 
         BDDMockito.given(produtoRepository.findById(dto.produtoId()))
@@ -124,6 +130,10 @@ class LoteServiceTest {
         BDDMockito.then(produtoRepository)
                 .should()
                 .findById(dto.produtoId());
+
+        BDDMockito.then(validacaoNumeroLoteUnico)
+                .should()
+                .validar(dto.numeroLote());
 
         BDDMockito.then(loteRepository)
                 .should()
@@ -154,30 +164,39 @@ class LoteServiceTest {
         assertNotNull(resultado);
 
         verify(loteRepository).findById(id);
-
     }
 
     @Test
     void deveBuscarLotesPorProduto() {
+
         UUID produtoId = UUID.randomUUID();
+
         Produto produto = new Produto();
         produto.setId(produtoId);
+
         Lote lote = new Lote();
         lote.setProduto(produto);
         lote.setDataValidade(LocalDate.now().plusDays(10));
-        when(loteRepository.findByProduto_Id(produtoId)).thenReturn(List.of(lote));
+
+        when(loteRepository.findByProduto_Id(produtoId))
+                .thenReturn(List.of(lote));
 
         var resultado = service.buscaLotesPorProduto(produtoId);
 
         assertEquals(1, resultado.size());
-        verify(validacaoProdutoPossuiLotes).validar(List.of(lote));
+
+        verify(validacaoProdutoPossuiLotes)
+                .validar(List.of(lote));
     }
 
     @Test
     void deveRemoverLote() {
+
         UUID id = UUID.randomUUID();
         Lote lote = new Lote();
-        when(loteRepository.findById(id)).thenReturn(Optional.of(lote));
+
+        when(loteRepository.findById(id))
+                .thenReturn(Optional.of(lote));
 
         service.removerLote(id);
 
@@ -186,9 +205,12 @@ class LoteServiceTest {
 
     @Test
     void deveValidarNumeroAntesDeCadastrarLote() {
+
         UUID produtoId = UUID.randomUUID();
+
         Produto produto = new Produto();
         produto.setId(produtoId);
+
         var dto = new LoteRequestDTO(
                 "LOTE-1",
                 1,
@@ -198,70 +220,132 @@ class LoteServiceTest {
                 "Prateleira",
                 produtoId
         );
+
         when(produtoRepository.findById(produtoId))
                 .thenReturn(Optional.of(produto));
+
         when(loteRepository.save(any(Lote.class)))
                 .thenAnswer(i -> i.getArgument(0));
 
         service.cadastrarLote(dto);
 
-        verify(validacaoNumeroLoteUnico).validar(dto);
+        verify(validacaoNumeroLoteUnico)
+                .validar(dto.numeroLote());
     }
 
     @Test
     void deveAtualizarSomenteQuantidadeDoLote() {
+
         UUID id = UUID.randomUUID();
+
         Produto produto = new Produto();
         produto.setId(UUID.randomUUID());
-        Lote lote = lote(id, produto);
-        when(loteRepository.findById(id)).thenReturn(Optional.of(lote));
-        when(loteRepository.save(lote)).thenReturn(lote);
 
-        var resultado = service.atualizarLote(id,
-                new LoteUpdateDTO(null, 25, null, null, null, null));
+        Lote lote = lote(id, produto);
+
+        when(loteRepository.findById(id))
+                .thenReturn(Optional.of(lote));
+
+        when(loteRepository.save(lote))
+                .thenReturn(lote);
+
+        var resultado = service.atualizarLote(
+                id,
+                new LoteUpdateDTO(
+                        null,
+                        25,
+                        null,
+                        null,
+                        null,
+                        null
+                )
+        );
 
         assertEquals(25, resultado.quantidade());
         assertEquals("LOTE-1", resultado.numeroLote());
         assertEquals(new BigDecimal("10.00"), resultado.custoUnitario());
+
         verify(loteRepository).save(lote);
     }
 
     @Test
     void deveAtualizarMultiplosCamposDoLoteEPreservarProduto() {
+
         UUID id = UUID.randomUUID();
+
         Produto produto = new Produto();
         produto.setId(UUID.randomUUID());
-        Lote lote = lote(id, produto);
-        when(loteRepository.findById(id)).thenReturn(Optional.of(lote));
-        when(loteRepository.save(lote)).thenReturn(lote);
 
-        var resultado = service.atualizarLote(id, new LoteUpdateDTO(
-                "LOTE-2", null, new BigDecimal("12.50"), null,
-                LocalDate.now().plusDays(20), "Prateleira B"));
+        Lote lote = lote(id, produto);
+
+        when(loteRepository.findById(id))
+                .thenReturn(Optional.of(lote));
+
+        when(loteRepository.save(lote))
+                .thenReturn(lote);
+
+        var resultado = service.atualizarLote(
+                id,
+                new LoteUpdateDTO(
+                        "LOTE-2",
+                        null,
+                        new BigDecimal("12.50"),
+                        null,
+                        LocalDate.now().plusDays(20),
+                        "Prateleira B"
+                )
+        );
 
         assertEquals("LOTE-2", resultado.numeroLote());
         assertEquals(10, resultado.quantidade());
         assertEquals(new BigDecimal("12.50"), resultado.custoUnitario());
         assertEquals("Prateleira B", resultado.endereco());
         assertEquals(produto.getId(), resultado.produtoId());
-        verify(validacaoNumeroLoteUnico).validar("LOTE-2");
+
+        verify(validacaoNumeroLoteUnico)
+                .validar("LOTE-2");
+
         verify(loteRepository).save(lote);
     }
 
     @Test
     void deveFalharAoAtualizarLoteInexistente() {
-        UUID id = UUID.randomUUID();
-        when(loteRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(RecursoNaoEncontradoException.class,
-                () -> service.atualizarLote(id,
-                        new LoteUpdateDTO(null, 2, null, null, null, null)));
-        verify(loteRepository, never()).save(any());
+        UUID id = UUID.randomUUID();
+
+        when(loteRepository.findById(id))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                RecursoNaoEncontradoException.class,
+                () -> service.atualizarLote(
+                        id,
+                        new LoteUpdateDTO(
+                                null,
+                                2,
+                                null,
+                                null,
+                                null,
+                                null
+                        )
+                )
+        );
+
+        verify(loteRepository, never())
+                .save(any());
     }
 
     private Lote lote(UUID id, Produto produto) {
-        return new Lote(id, "LOTE-1", 10, new BigDecimal("10.00"), LocalDate.now(),
-                LocalDate.now().plusDays(10), "Prateleira A", produto);
-    }
 
+        return new Lote(
+                id,
+                "LOTE-1",
+                10,
+                new BigDecimal("10.00"),
+                LocalDate.now(),
+                LocalDate.now().plusDays(10),
+                "Prateleira A",
+                produto
+        );
+    }
 }

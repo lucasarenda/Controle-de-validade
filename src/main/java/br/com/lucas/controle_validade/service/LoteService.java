@@ -11,6 +11,7 @@ import br.com.lucas.controle_validade.repository.LoteRepository;
 import br.com.lucas.controle_validade.repository.ProdutoRepository;
 import br.com.lucas.controle_validade.validation.ValidacaoProdutoPossuiLotes;
 import br.com.lucas.controle_validade.validation.ValidacaoNumeroLoteUnico;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -20,24 +21,23 @@ import java.util.UUID;
 
 @Service
 public class LoteService {
-    private final LoteRepository repository;
-    private final ProdutoRepository produtoRepository;
-    private final ValidacaoProdutoPossuiLotes validacaoProdutoPossuiLotes;
-    private final ValidacaoNumeroLoteUnico validacaoNumeroLoteUnico;
+    @Autowired
+    private  LoteRepository repository;
 
-    public LoteService(LoteRepository repository, ProdutoRepository produtoRepository,
-                       ValidacaoProdutoPossuiLotes validacaoProdutoPossuiLotes,
-                       ValidacaoNumeroLoteUnico validacaoNumeroLoteUnico) {
-        this.repository = repository;
-        this.produtoRepository = produtoRepository;
-        this.validacaoProdutoPossuiLotes = validacaoProdutoPossuiLotes;
-        this.validacaoNumeroLoteUnico = validacaoNumeroLoteUnico;
-    }
+    @Autowired
+    private  ProdutoRepository produtoRepository;
+
+    @Autowired
+    private  ValidacaoProdutoPossuiLotes validacaoProdutoPossuiLotes;
+
+    @Autowired
+    private  ValidacaoNumeroLoteUnico validacaoNumeroLoteUnico;
+
 
     public LoteResponseDTO cadastrarLote(LoteRequestDTO dto) {
         Produto produto = produtoRepository.findById(dto.produtoId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Produto não encontrado"));
-        validacaoNumeroLoteUnico.validar(dto);
+        validacaoNumeroLoteUnico.validar(dto.numeroLote());
         return converter(repository.save(new Lote(dto, produto)));
     }
 

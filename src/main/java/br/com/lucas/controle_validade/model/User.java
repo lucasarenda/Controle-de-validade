@@ -5,10 +5,7 @@ import br.com.lucas.controle_validade.Dto.request.UserUpdateDTO;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -20,6 +17,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
 @Getter
+@Setter
 @NoArgsConstructor
 public class User {
 
@@ -28,8 +26,6 @@ public class User {
 
     private UUID id;
 
-
-    @Column(unique = true)
     private String nome;
 
 
@@ -48,21 +44,10 @@ public class User {
             fetch = FetchType.LAZY)
     private List<Estabelecimento> Estabelecimentos = new ArrayList<>();
 
-    public User(UserRequestDTO userRequestDTO) {
-        this.nome = userRequestDTO.nome();
-        this.email = userRequestDTO.email().trim().toLowerCase();
-        this.senha = userRequestDTO.senha();
-        this.dataCadastro = LocalDateTime.now();
+    public User(String nome, String email, String senha) {
+        this.nome = nome;
+        this.email = email.trim().toLowerCase();
+        this.senha = senha;
+        dataCadastro = LocalDateTime.now();
     }
-
-    public void atualizar(UserUpdateDTO dto) {
-        if (dto.nome() != null) {
-            this.nome = dto.nome();
-        }
-        if (dto.email() != null) {
-            this.email = dto.email().trim().toLowerCase();
-        }
-    }
-
-
 }

@@ -26,6 +26,7 @@ public class Produto {
     @NotNull
     private UUID id;
 
+    @Column(unique = true)
     private String nome;
 
 

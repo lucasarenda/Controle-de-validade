@@ -66,7 +66,7 @@ class ValidacoesDuplicidadeTest {
                 "Rua A",
                 UUID.randomUUID()
         );
-        when(estabelecimentoRepository.existsByNome(dto.nome())).thenReturn(true);
+        when(estabelecimentoRepository.existsByNomeIgnoreCase(dto.nome())).thenReturn(true);
 
         RecursoJaExisteException exception = assertThrows(
                 RecursoJaExisteException.class,
@@ -74,6 +74,25 @@ class ValidacoesDuplicidadeTest {
         );
 
         assertEquals("Já existe um estabelecimento cadastrado com este nome", exception.getMessage());
+    }
+    @Test
+    void deveImpedirEstabelecimentoComCnpjJaCadastrado() {
+        EstabelecimentoRequestDTO dto = new EstabelecimentoRequestDTO(
+                "Mercado",
+                "mercado@email.com",
+                "123",
+                "9999",
+                "Rua A",
+                UUID.randomUUID()
+        );
+        when(estabelecimentoRepository.existsByCnpj(dto.cnpj())).thenReturn(true);
+
+        RecursoJaExisteException exception = assertThrows(
+                RecursoJaExisteException.class,
+                () -> new ValidacaoCnpjEstabelecimentoUnico(estabelecimentoRepository).validar(dto)
+        );
+
+        assertEquals("Já existe outro estabelecimento com esse cnpj", exception.getMessage());
     }
 
     @Test
@@ -104,7 +123,7 @@ class ValidacoesDuplicidadeTest {
                 "lucas.arenda@gmail.com",
                 "0102"
         );
-        when(userRepository.existsByEmail(dto.email())).thenReturn(true);
+        when(userRepository.existsByEmailIgnoreCase(dto.email())).thenReturn(true);
 
         RecursoJaExisteException exception = assertThrows(
                 RecursoJaExisteException.class,

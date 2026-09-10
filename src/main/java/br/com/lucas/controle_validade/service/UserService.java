@@ -4,9 +4,12 @@ import br.com.lucas.controle_validade.Dto.request.UserRequestDTO;
 import br.com.lucas.controle_validade.Dto.request.UserUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.UserResponseDTO;
 import br.com.lucas.controle_validade.exception.custom.RecursoNaoEncontradoException;
+import br.com.lucas.controle_validade.model.Estabelecimento;
 import br.com.lucas.controle_validade.model.User;
+import br.com.lucas.controle_validade.repository.EstabelecimentoRepository;
 import br.com.lucas.controle_validade.repository.UserRepository;
 import br.com.lucas.controle_validade.validation.ValidacaoEmailUsuarioUnico;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,17 +17,21 @@ import java.util.UUID;
 
 @Service
 public class UserService {
-    private final UserRepository repository;
-    private final ValidacaoEmailUsuarioUnico validacaoEmailUsuarioUnico;
+    @Autowired
+    private  UserRepository repository;
 
-    public UserService(UserRepository repository, ValidacaoEmailUsuarioUnico validacaoEmailUsuarioUnico) {
-        this.repository = repository;
-        this.validacaoEmailUsuarioUnico = validacaoEmailUsuarioUnico;
-    }
+    @Autowired
+    private  ValidacaoEmailUsuarioUnico validacaoEmailUsuarioUnico;
+
 
     public UserResponseDTO cadastrarUser(UserRequestDTO dto) {
         validacaoEmailUsuarioUnico.validar(dto);
-        User user = repository.save(new User(dto));
+        User user = new User(
+                dto.nome() ,
+                dto.email().trim().toLowerCase(),
+                dto.senha()
+                );
+        repository.save(user);
         return new UserResponseDTO(user);
     }
 
@@ -46,11 +53,20 @@ public class UserService {
         User user = repository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
 
-        if (dto.email() != null && !dto.email().trim().equalsIgnoreCase(user.getEmail())) {
-            validacaoEmailUsuarioUnico.validar(dto.email());
+        if (dto.nome() != null) {
+            user.setNome(dto.nome());
         }
 
-        user.atualizar(dto);
-        return new UserResponseDTO(repository.save(user));
+        if (dto.email() != null) {
+            String emailNormalizado = dto.email().trim().toLowerCase();
+
+            validacaoEmailUsuarioUnico.validar(emailNormalizado);
+
+            user.setEmail(emailNormalizado);
+        }
+
+        repository.save(user);
+
+        return new UserResponseDTO(user);
     }
 }

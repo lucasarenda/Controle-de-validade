@@ -4,10 +4,7 @@ import br.com.lucas.controle_validade.Dto.request.EstabelecimentoRequestDTO;
 import br.com.lucas.controle_validade.Dto.request.EstabelecimentoUpdateDTO;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +13,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
 @Getter
+@Setter
 @NoArgsConstructor
 @Table(name = "estabelecimentos")
 public class Estabelecimento {
@@ -26,8 +24,10 @@ public class Estabelecimento {
 
     private String nome;
 
+    @Column(unique = true)
     private String email;
 
+    @Column(unique = true)
     private String cnpj;
 
     private String telefone;
@@ -43,20 +43,12 @@ public class Estabelecimento {
             fetch = FetchType.LAZY)
     private List<Produto> produtos = new ArrayList<>();
 
-    public Estabelecimento(EstabelecimentoRequestDTO estabelecimentoRequestDTO,User usuario) {
-        this.nome = estabelecimentoRequestDTO.nome();
-        this.email = estabelecimentoRequestDTO.email();
-        this.cnpj = estabelecimentoRequestDTO.cnpj();
-        this.telefone = estabelecimentoRequestDTO.telefone();
-        this.endereco = estabelecimentoRequestDTO.endereco();
-        this.user =  usuario;
-    }
-
-    public void atualizar(EstabelecimentoUpdateDTO dto) {
-        if (dto.nome() != null) this.nome = dto.nome();
-        if (dto.email() != null) this.email = dto.email();
-        if (dto.cnpj() != null) this.cnpj = dto.cnpj();
-        if (dto.telefone() != null) this.telefone = dto.telefone();
-        if (dto.endereco() != null) this.endereco = dto.endereco();
+    public Estabelecimento(String nome, String email, String cnpj, String telefone, String endereco, User user) {
+        this.nome = nome;
+        this.email = email.trim().toLowerCase();
+        this.cnpj = cnpj;
+        this.telefone = telefone;
+        this.endereco = endereco;
+        this.user = user;
     }
 }

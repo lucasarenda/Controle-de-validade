@@ -19,7 +19,7 @@ public class ValidacaoEmailUsuarioUnico implements Validacao<UserRequestDTO> {
     }
 
     public void validar(String email) {
-        if (repository.existsByEmail(email.trim().toLowerCase())) {
+        if (repository.existsByEmailIgnoreCase(email.trim().toLowerCase())) {
             throw new UsuarioJaExisteException("Já existe um usuário cadastrado com este email");
         }
     }

@@ -19,7 +19,7 @@ public class ValidacaoNomeEstabelecimentoUnico implements Validacao<Estabelecime
     }
 
     public void validar(String nome) {
-        if (repository.existsByNome(nome)) {
+        if (repository.existsByNomeIgnoreCase(nome)) {
             throw new RecursoJaExisteException("Já existe um estabelecimento cadastrado com este nome");
         }
     }
