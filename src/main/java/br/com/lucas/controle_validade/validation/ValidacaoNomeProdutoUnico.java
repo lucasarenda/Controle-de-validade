@@ -1,26 +1,23 @@
 package br.com.lucas.controle_validade.validation;
 
-import br.com.lucas.controle_validade.Dto.request.ProdutoRequestDTO;
 import br.com.lucas.controle_validade.exception.custom.RecursoJaExisteException;
 import br.com.lucas.controle_validade.repository.ProdutoRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @Component
-public class ValidacaoNomeProdutoUnico implements Validacao<ProdutoRequestDTO> {
+public class ValidacaoNomeProdutoUnico {
     private final ProdutoRepository repository;
 
     public ValidacaoNomeProdutoUnico(ProdutoRepository repository) {
         this.repository = repository;
     }
 
-    @Override
-    public void validar(ProdutoRequestDTO dto) {
-        validar(dto.nome());
-    }
-
-    public void validar(String nome) {
-        if (repository.existsByNome(nome)) {
-            throw new RecursoJaExisteException("Já existe um produto cadastrado com este nome");
+    public void validar(String nome, UUID estabelecimentoId) {
+        if (repository.existsByNomeIgnoreCaseAndEstabelecimento_Id(nome, estabelecimentoId)) {
+            throw new RecursoJaExisteException(
+                    "Já existe um produto com este nome neste estabelecimento");
         }
     }
 }

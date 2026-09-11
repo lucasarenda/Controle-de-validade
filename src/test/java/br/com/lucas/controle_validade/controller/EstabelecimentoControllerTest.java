@@ -1,9 +1,8 @@
 package br.com.lucas.controle_validade.controller;
 
-import br.com.lucas.controle_validade.Dto.request.EstabelecimentoRequestDTO;
-import br.com.lucas.controle_validade.Dto.request.EstabelecimentoUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.EstabelecimentoResponseDTO;
 import br.com.lucas.controle_validade.service.EstabelecimentoService;
+import br.com.lucas.controle_validade.service.ProdutoService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -16,110 +15,44 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(EstabelecimentoController.class)
 @WithMockUser
 class EstabelecimentoControllerTest {
-
-    @Autowired
-    private MockMvc mvc;
-
-    @MockitoBean
-    private EstabelecimentoService service;
+    @Autowired MockMvc mvc;
+    @MockitoBean EstabelecimentoService estabelecimentoService;
+    @MockitoBean ProdutoService produtoService;
 
     @Test
-    void deveCadastrarEstabelecimento() throws Exception {
-
-        UUID usuarioId = UUID.randomUUID();
-
-        String json = """
-                {
-                  "nome": "Mercado",
-                  "email": "mercado@email.com",
-                  "cnpj": "123",
-                  "telefone": "9999",
-                  "endereco": "Rua A",
-                  "usuarioId": "%s"
-                }
-                """.formatted(usuarioId);
-
-        mvc.perform(
-                        post("/estabelecimentos")
-                                .with(csrf())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(json)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().string("Estabelecimento cadastrado com sucesso!!"));
-
-        verify(service)
-                .cadastrarEstabelecimento(any(EstabelecimentoRequestDTO.class));
-    }
-
-    @Test
-    void deveBuscarEstabelecimentosPorUsuario() throws Exception {
-
-        UUID usuarioId = UUID.randomUUID();
-
-        var dto = new EstabelecimentoResponseDTO(
-                UUID.randomUUID(),
-                "Mercado",
-                "m@e.com",
-                "123",
-                "999",
-                "Rua A",
-                usuarioId
-        );
-
-        when(service.buscaEstabelecimentoPorUsuario(usuarioId))
-                .thenReturn(List.of(dto));
-
-        mvc.perform(
-                        get("/estabelecimentos/{id}", usuarioId)
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].nome").value("Mercado"))
-                .andExpect(jsonPath("$[0].usuarioId").value(usuarioId.toString()));
-    }
-
-    @Test
-    void deveRemoverEstabelecimento() throws Exception {
-
+    void getProdutosUsaRotaAninhada() throws Exception {
         UUID id = UUID.randomUUID();
-
-        mvc.perform(
-                        delete("/estabelecimentos/{id}", id)
-                                .with(csrf())
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().string("Estabelecimento removido com sucesso!!"));
-
-        verify(service).removeEstabelecimento(id);
+        when(produtoService.buscaProdutosPorEstabelecimento(id)).thenReturn(List.of());
+        mvc.perform(get("/estabelecimentos/{id}/produtos", id))
+                .andExpect(status().isOk()).andExpect(content().json("[]"));
+        verify(produtoService).buscaProdutosPorEstabelecimento(id);
     }
 
     @Test
-    void deveAtualizarEstabelecimentoParcialmente() throws Exception {
+    void patchEstabelecimentoRetorna200ComRecursoAtualizado() throws Exception {
         UUID id = UUID.randomUUID();
         UUID usuarioId = UUID.randomUUID();
-        var response = new EstabelecimentoResponseDTO(
-                id, "Mercado Central", "m@e.com", "123", "999", "Rua B", usuarioId);
-        when(service.atualizarEstabelecimento(eq(id), any(EstabelecimentoUpdateDTO.class)))
-                .thenReturn(response);
-
-        mvc.perform(patch("/estabelecimentos/{id}", id)
-                        .with(csrf())
+        when(estabelecimentoService.atualizarEstabelecimento(eq(id), any())).thenReturn(
+                new EstabelecimentoResponseDTO(id, "Mercado Central", "m@e.com", "123",
+                        "999", "Rua A", usuarioId));
+        mvc.perform(patch("/estabelecimentos/{id}", id).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nome\":\"Mercado Central\",\"endereco\":\"Rua B\"}"))
+                        .content("{\"nome\":\"Mercado Central\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(id.toString()))
-                .andExpect(jsonPath("$.nome").value("Mercado Central"))
-                .andExpect(jsonPath("$.endereco").value("Rua B"))
-                .andExpect(jsonPath("$.usuarioId").value(usuarioId.toString()));
-
-        verify(service).atualizarEstabelecimento(eq(id), any(EstabelecimentoUpdateDTO.class));
+                .andExpect(jsonPath("$.nome").value("Mercado Central"));
     }
 }

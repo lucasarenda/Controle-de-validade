@@ -9,104 +9,90 @@ import br.com.lucas.controle_validade.model.User;
 import br.com.lucas.controle_validade.repository.EstabelecimentoRepository;
 import br.com.lucas.controle_validade.repository.UserRepository;
 import br.com.lucas.controle_validade.validation.ValidacaoCnpjEstabelecimentoUnico;
-import br.com.lucas.controle_validade.validation.ValidacaoUsuarioPossuiEstabelecimentos;
 import br.com.lucas.controle_validade.validation.ValidacaoNomeEstabelecimentoUnico;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
 @Service
 public class EstabelecimentoService {
-    @Autowired
-    private  UserRepository repositoryUser;
+    private final UserRepository userRepository;
+    private final EstabelecimentoRepository repository;
+    private final ValidacaoNomeEstabelecimentoUnico validacaoNome;
+    private final ValidacaoCnpjEstabelecimentoUnico validacaoCnpj;
 
-    @Autowired
-    private  EstabelecimentoRepository repositoryEstabelecimento;
+    public EstabelecimentoService(UserRepository userRepository,
+                                  EstabelecimentoRepository repository,
+                                  ValidacaoNomeEstabelecimentoUnico validacaoNome,
+                                  ValidacaoCnpjEstabelecimentoUnico validacaoCnpj) {
+        this.userRepository = userRepository;
+        this.repository = repository;
+        this.validacaoNome = validacaoNome;
+        this.validacaoCnpj = validacaoCnpj;
+    }
 
-    @Autowired
-    private  ValidacaoUsuarioPossuiEstabelecimentos validacaoUsuarioPossuiEstabelecimentos;
-
-    @Autowired
-    private  ValidacaoNomeEstabelecimentoUnico validacaoNomeEstabelecimentoUnico;
-
-    @Autowired
-    private ValidacaoCnpjEstabelecimentoUnico validacaoCnpjEstabelecimentoUnico;
-
-
+    @Transactional
     public EstabelecimentoResponseDTO cadastrarEstabelecimento(EstabelecimentoRequestDTO dto) {
-        User usuario = repositoryUser.findById(dto.usuarioId())
+        User usuario = userRepository.findById(dto.usuarioId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
-
-        String nomeNormalizado = dto.nome()
-                .trim()
-                .replaceAll("\\s+", " ");
-
-        validacaoNomeEstabelecimentoUnico.validar(nomeNormalizado);
-        validacaoCnpjEstabelecimentoUnico.validar(dto.cnpj());
-
+        String nome = normalizarNome(dto.nome());
+        validacaoNome.validar(nome);
+        validacaoCnpj.validar(dto.cnpj().trim());
         Estabelecimento estabelecimento = new Estabelecimento(
-                nomeNormalizado,
-                dto.cnpj(),
-                dto.email(),
-                dto.telefone(),
-                dto.endereco(),
-                usuario
-        );
-
-        Estabelecimento estabelecimentoSalvo = repositoryEstabelecimento.save(estabelecimento);
-
-        return new EstabelecimentoResponseDTO(estabelecimentoSalvo);
+                nome, dto.email(), dto.cnpj().trim(), dto.telefone().trim(), dto.endereco().trim(), usuario);
+        return new EstabelecimentoResponseDTO(repository.save(estabelecimento));
     }
 
-    public List<EstabelecimentoResponseDTO> buscaEstabelecimentoPorUsuario(UUID id) {
-        List<Estabelecimento> estabelecimentos = repositoryEstabelecimento.findByUser_Id(id);
-
-        validacaoUsuarioPossuiEstabelecimentos.validar(estabelecimentos);
-
-        return estabelecimentos.stream()
-                .map(EstabelecimentoResponseDTO::new)
-                .toList();
+    @Transactional(readOnly = true)
+    public List<EstabelecimentoResponseDTO> buscaEstabelecimentoPorUsuario(UUID usuarioId) {
+        if (!userRepository.existsById(usuarioId)) {
+            throw new RecursoNaoEncontradoException("Usuário não encontrado");
+        }
+        return repository.findByUser_Id(usuarioId).stream()
+                .map(EstabelecimentoResponseDTO::new).toList();
     }
 
+    @Transactional(readOnly = true)
+    public EstabelecimentoResponseDTO buscarPorId(UUID id) {
+        return new EstabelecimentoResponseDTO(buscarEstabelecimento(id));
+    }
+
+    @Transactional
     public void removeEstabelecimento(UUID id) {
-
-        Estabelecimento estabelecimento = repositoryEstabelecimento.findById(id)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Estabelecimento não encontrado"));
-
-        repositoryEstabelecimento.delete(estabelecimento);
+        repository.delete(buscarEstabelecimento(id));
     }
 
+    @Transactional
     public EstabelecimentoResponseDTO atualizarEstabelecimento(UUID id, EstabelecimentoUpdateDTO dto) {
-        Estabelecimento estabelecimento = repositoryEstabelecimento.findById(id)
+        Estabelecimento estabelecimento = buscarEstabelecimento(id);
+        if (dto.nome() != null) {
+            String nome = normalizarNome(dto.nome());
+            if (!nome.equalsIgnoreCase(estabelecimento.getNome())) {
+                validacaoNome.validar(nome);
+                estabelecimento.alterarNome(nome);
+            }
+        }
+        if (dto.email() != null) estabelecimento.alterarEmail(dto.email());
+        if (dto.cnpj() != null) {
+            String cnpj = dto.cnpj().trim();
+            if (!cnpj.equals(estabelecimento.getCnpj())) {
+                validacaoCnpj.validar(cnpj);
+                estabelecimento.alterarCnpj(cnpj);
+            }
+        }
+        if (dto.telefone() != null) estabelecimento.alterarTelefone(dto.telefone().trim());
+        if (dto.endereco() != null) estabelecimento.alterarEndereco(dto.endereco().trim());
+        return new EstabelecimentoResponseDTO(estabelecimento);
+    }
+
+    private Estabelecimento buscarEstabelecimento(UUID id) {
+        return repository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Estabelecimento não encontrado"));
+    }
 
-        if (dto.nome() != null && !dto.nome().equalsIgnoreCase(estabelecimento.getNome())) {
-            validacaoNomeEstabelecimentoUnico.validar(dto.nome());
-            estabelecimento.setNome(dto.nome());
-        }
-
-        if (dto.nome() != null){
-            estabelecimento.setNome(dto.nome());
-        }
-
-        if (dto.email() != null) {
-            estabelecimento.setEmail(dto.email().trim().toLowerCase());
-        }
-
-        if (dto.cnpj() != null && !dto.cnpj().equalsIgnoreCase(estabelecimento.getCnpj())){
-            validacaoCnpjEstabelecimentoUnico.validar(dto.cnpj());
-            estabelecimento.setCnpj(dto.cnpj());
-        }
-
-        if (dto.telefone() != null){
-            estabelecimento.setTelefone(dto.telefone());
-        }
-
-        if (dto.endereco() != null) {
-           estabelecimento.setEndereco(dto.endereco());
-        }
-        return new EstabelecimentoResponseDTO(repositoryEstabelecimento.save(estabelecimento));
+    private String normalizarNome(String nome) {
+        return nome.trim().replaceAll("\\s+", " ");
     }
 }

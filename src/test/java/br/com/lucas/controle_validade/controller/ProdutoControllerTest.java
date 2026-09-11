@@ -1,8 +1,8 @@
 package br.com.lucas.controle_validade.controller;
 
-import br.com.lucas.controle_validade.Dto.request.ProdutoRequestDTO;
-import br.com.lucas.controle_validade.Dto.request.ProdutoUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.ProdutoResponseDTO;
+import br.com.lucas.controle_validade.exception.custom.RecursoNaoEncontradoException;
+import br.com.lucas.controle_validade.service.LoteService;
 import br.com.lucas.controle_validade.service.ProdutoService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,103 +17,62 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ProdutoController.class)
 @WithMockUser
 class ProdutoControllerTest {
-    @Autowired
-    private MockMvc mvc;
-
-    @MockitoBean
-    private ProdutoService service;
+    @Autowired MockMvc mvc;
+    @MockitoBean ProdutoService produtoService;
+    @MockitoBean LoteService loteService;
 
     @Test
-    void deveCadastrarProduto() throws Exception {
-
-        UUID estabelecimentoId = UUID.randomUUID();
-
-        String json = """
-                {
-                  "nome": "Arroz",
-                  "descricao": "Branco",
-                  "marca": "Marca",
-                  "categoria": "Alimento",
-                  "estabelecimentoId": "%s"
-                }
-                """.formatted(estabelecimentoId);
-
-        mvc.perform(
-                post("/produtos")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().string("Produto cadastrado com sucesso!!"));
-
-        verify(service).cadastrarProduto(any(ProdutoRequestDTO.class));
-    }
-
-    @Test
-    void deveBuscarProdutosPorEstabelecimento() throws Exception {
-        UUID estabelecimentoId = UUID.randomUUID();
-        var dto = new ProdutoResponseDTO(
-                UUID.randomUUID(),
-                "Arroz",
-                "Branco",
-                "Marca",
-                "Alimento",
-                LocalDateTime.now(),
-                estabelecimentoId
-        );
-
-        when(service.buscaProdutosPorEstabelecimento(estabelecimentoId))
-                .thenReturn(List.of(dto));
-
-        mvc.perform(
-                get("/produtos/{id}", estabelecimentoId)
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].nome").value("Arroz"))
-                .andExpect(jsonPath("$[0].estabelecimentoId").value(estabelecimentoId.toString()));
-    }
-
-    @Test
-    void deveRemoverProduto() throws Exception {
+    void getLotesUsaRotaAninhada() throws Exception {
         UUID id = UUID.randomUUID();
-
-        mvc.perform(
-                delete("/produtos/{id}", id)
-                        .with(csrf())
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().string("Produto removido com sucesso!!"));
-
-        verify(service).removerProduto(id);
+        when(loteService.buscaLotesPorProduto(id)).thenReturn(List.of());
+        mvc.perform(get("/produtos/{id}/lotes", id))
+                .andExpect(status().isOk()).andExpect(content().json("[]"));
+        verify(loteService).buscaLotesPorProduto(id);
     }
 
     @Test
-    void deveAtualizarProdutoParcialmente() throws Exception {
+    void deleteRetorna204SemCorpo() throws Exception {
+        UUID id = UUID.randomUUID();
+        mvc.perform(delete("/produtos/{id}", id).with(csrf()))
+                .andExpect(status().isNoContent()).andExpect(content().string(""));
+        verify(produtoService).removerProduto(id);
+    }
+
+    @Test
+    void patchUsaRotaDoProprioRecurso() throws Exception {
         UUID id = UUID.randomUUID();
         UUID estabelecimentoId = UUID.randomUUID();
-        var response = new ProdutoResponseDTO(id, "Arroz Integral", "Integral", "Marca",
-                "Alimento", LocalDateTime.now(), estabelecimentoId);
-        when(service.atualizarProduto(eq(id), any(ProdutoUpdateDTO.class))).thenReturn(response);
+        when(produtoService.atualizarProduto(eq(id), any())).thenReturn(new ProdutoResponseDTO(
+                id, "Arroz Integral", "Integral", "M", "A", LocalDateTime.now(), estabelecimentoId));
+        mvc.perform(patch("/produtos/{id}", id).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\":\"Arroz Integral\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.nome").value("Arroz Integral"));
+    }
 
-        mvc.perform(patch("/produtos/{id}", id)
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nome\":\"Arroz Integral\",\"descricao\":\"Integral\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(id.toString()))
-                .andExpect(jsonPath("$.nome").value("Arroz Integral"))
-                .andExpect(jsonPath("$.descricao").value("Integral"))
-                .andExpect(jsonPath("$.estabelecimentoId").value(estabelecimentoId.toString()));
-
-        verify(service).atualizarProduto(eq(id), any(ProdutoUpdateDTO.class));
+    @Test
+    void recursoNaoEncontradoTemFormatoPadronizado() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(produtoService.buscarPorId(id)).thenThrow(new RecursoNaoEncontradoException("Produto não encontrado"));
+        mvc.perform(get("/produtos/{id}", id))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.mensagem").value("Produto não encontrado"))
+                .andExpect(jsonPath("$.path").value("/produtos/" + id))
+                .andExpect(jsonPath("$.campos").isMap());
     }
 }

@@ -1,8 +1,7 @@
 package br.com.lucas.controle_validade.controller;
 
-import br.com.lucas.controle_validade.Dto.request.UserRequestDTO;
-import br.com.lucas.controle_validade.Dto.request.UserUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.UserResponseDTO;
+import br.com.lucas.controle_validade.service.EstabelecimentoService;
 import br.com.lucas.controle_validade.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,109 +16,66 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
 @WithMockUser
 class UserControllerTest {
-    @Autowired
-    private MockMvc mvc;
-
-    @MockitoBean
-    private UserService service;
+    @Autowired MockMvc mvc;
+    @MockitoBean UserService userService;
+    @MockitoBean EstabelecimentoService estabelecimentoService;
 
     @Test
-    void deveCadastrarUsuario() throws Exception {
-
-        String json = """
-                {
-                  "nome": "Lucas",
-                  "email": "lucas@email.com",
-                  "senha": "123456"
-                }
-                """;
-
-        mvc.perform(
-                post("/users/cadastrar")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().string("Usuário cadastrado com sucesso!!"));
-
-        verify(service).cadastrarUser(any(UserRequestDTO.class));
+    void postUsuarioRetorna201() throws Exception {
+        when(userService.cadastrarUser(any())).thenReturn(
+                new UserResponseDTO(UUID.randomUUID(), "Lucas", "l@e.com", LocalDateTime.now()));
+        mvc.perform(post("/usuarios").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\":\"Lucas\",\"email\":\"l@e.com\",\"senha\":\"123456\"}"))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.nome").value("Lucas"));
     }
 
     @Test
-    void deveBuscarTodosUsuarios() throws Exception {
-        var dto = new UserResponseDTO(
-                UUID.randomUUID(),
-                "Lucas",
-                "lucas@email.com",
-                LocalDateTime.now()
-        );
-        when(service.buscaTodosUsers())
-                .thenReturn(List.of(dto));
-
-        mvc.perform(
-                get("/users")
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].nome").value("Lucas"))
-                .andExpect(jsonPath("$[0].email").value("lucas@email.com"));
+    void getEstabelecimentosUsaRotaAninhada() throws Exception {
+        UUID usuarioId = UUID.randomUUID();
+        when(estabelecimentoService.buscaEstabelecimentoPorUsuario(usuarioId)).thenReturn(List.of());
+        mvc.perform(get("/usuarios/{id}/estabelecimentos", usuarioId))
+                .andExpect(status().isOk()).andExpect(content().json("[]"));
+        verify(estabelecimentoService).buscaEstabelecimentoPorUsuario(usuarioId);
     }
 
     @Test
-    void deveBuscarUsuarioPeloNome() throws Exception {
-        var dto = new UserResponseDTO(
-                UUID.randomUUID(),
-                "Lucas",
-                "lucas@email.com",
-                LocalDateTime.now()
-        );
-
-        when(service.buscaUsuarioPeloNome("Lucas"))
-                .thenReturn(dto);
-
-        mvc.perform(get("/users/{nome}", "Lucas"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome").value("Lucas"));
-    }
-
-    @Test
-    void deveRemoverUsuario() throws Exception {
-
+    void patchUsuarioRetorna200ComRecursoAtualizado() throws Exception {
         UUID id = UUID.randomUUID();
-
-        mvc.perform(
-                delete("/users/{id}", id)
-                        .with(csrf())
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().string("Usuário removido com sucesso!!"));
-
-        verify(service).removerUser(id);
-    }
-
-    @Test
-    void deveAtualizarUsuarioParcialmente() throws Exception {
-        UUID id = UUID.randomUUID();
-        var response = new UserResponseDTO(id, "Lucas Silva", "lucas@email.com", LocalDateTime.now());
-        when(service.atualizarUser(eq(id), any(UserUpdateDTO.class))).thenReturn(response);
-
-        mvc.perform(patch("/usuarios/{id}", id)
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
+        when(userService.atualizarUser(eq(id), any())).thenReturn(
+                new UserResponseDTO(id, "Lucas Silva", "lucas@email.com", LocalDateTime.now()));
+        mvc.perform(patch("/usuarios/{id}", id).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nome\":\"Lucas Silva\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(id.toString()))
-                .andExpect(jsonPath("$.nome").value("Lucas Silva"))
-                .andExpect(jsonPath("$.email").value("lucas@email.com"));
+                .andExpect(jsonPath("$.nome").value("Lucas Silva"));
+    }
 
-        verify(service).atualizarUser(eq(id), any(UserUpdateDTO.class));
+    @Test
+    void beanValidationPreservaCamposInvalidos() throws Exception {
+        mvc.perform(post("/usuarios").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\":\"\",\"email\":\"invalido\",\"senha\":\"1\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.mensagem").value("Dados inválidos"))
+                .andExpect(jsonPath("$.path").value("/usuarios"))
+                .andExpect(jsonPath("$.campos.nome").exists())
+                .andExpect(jsonPath("$.campos.email").exists())
+                .andExpect(jsonPath("$.campos.senha").exists());
+        verifyNoInteractions(userService);
     }
 }

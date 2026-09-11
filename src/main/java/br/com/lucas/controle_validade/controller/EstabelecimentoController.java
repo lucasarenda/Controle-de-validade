@@ -3,10 +3,12 @@ package br.com.lucas.controle_validade.controller;
 import br.com.lucas.controle_validade.Dto.request.EstabelecimentoRequestDTO;
 import br.com.lucas.controle_validade.Dto.request.EstabelecimentoUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.EstabelecimentoResponseDTO;
+import br.com.lucas.controle_validade.Dto.response.ProdutoResponseDTO;
 import br.com.lucas.controle_validade.service.EstabelecimentoService;
+import br.com.lucas.controle_validade.service.ProdutoService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,38 +18,39 @@ import java.util.UUID;
 @RequestMapping("/estabelecimentos")
 public class EstabelecimentoController {
     private final EstabelecimentoService service;
+    private final ProdutoService produtoService;
 
-    public EstabelecimentoController(EstabelecimentoService service) {
+    public EstabelecimentoController(EstabelecimentoService service, ProdutoService produtoService) {
         this.service = service;
+        this.produtoService = produtoService;
     }
 
     @PostMapping
-    @Transactional
-    public ResponseEntity<String> cadastrarEstabelecimento(
-            @RequestBody @Valid EstabelecimentoRequestDTO dto
-    ) {
-        service.cadastrarEstabelecimento(dto);
-        return ResponseEntity.ok("Estabelecimento cadastrado com sucesso!!");
+    public ResponseEntity<EstabelecimentoResponseDTO> cadastrarEstabelecimento(
+            @RequestBody @Valid EstabelecimentoRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.cadastrarEstabelecimento(dto));
+    }
+
+    @GetMapping("/{estabelecimentoId}/produtos")
+    public List<ProdutoResponseDTO> buscarProdutos(@PathVariable UUID estabelecimentoId) {
+        return produtoService.buscaProdutosPorEstabelecimento(estabelecimentoId);
     }
 
     @GetMapping("/{id}")
-    public List<EstabelecimentoResponseDTO> buscaEstabelecimentoPorUsuario(@PathVariable UUID id) {
-        return service.buscaEstabelecimentoPorUsuario(id);
+    public EstabelecimentoResponseDTO buscarPorId(@PathVariable UUID id) {
+        return service.buscarPorId(id);
     }
 
     @DeleteMapping("/{id}")
-    @Transactional
-    public ResponseEntity<String> removerEstabelecimento(@PathVariable UUID id) {
+    public ResponseEntity<Void> removerEstabelecimento(@PathVariable UUID id) {
         service.removeEstabelecimento(id);
-        return ResponseEntity.ok("Estabelecimento removido com sucesso!!");
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}")
-    @Transactional
     public ResponseEntity<EstabelecimentoResponseDTO> atualizarEstabelecimento(
             @PathVariable UUID id,
-            @RequestBody @Valid EstabelecimentoUpdateDTO dto
-    ) {
+            @RequestBody @Valid EstabelecimentoUpdateDTO dto) {
         return ResponseEntity.ok(service.atualizarEstabelecimento(id, dto));
     }
 }

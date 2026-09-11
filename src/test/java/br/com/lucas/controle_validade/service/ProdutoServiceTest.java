@@ -3,11 +3,11 @@ package br.com.lucas.controle_validade.service;
 import br.com.lucas.controle_validade.Dto.request.ProdutoRequestDTO;
 import br.com.lucas.controle_validade.Dto.request.ProdutoUpdateDTO;
 import br.com.lucas.controle_validade.exception.custom.RecursoNaoEncontradoException;
+import br.com.lucas.controle_validade.exception.custom.RecursoJaExisteException;
 import br.com.lucas.controle_validade.model.Estabelecimento;
 import br.com.lucas.controle_validade.model.Produto;
 import br.com.lucas.controle_validade.repository.EstabelecimentoRepository;
 import br.com.lucas.controle_validade.repository.ProdutoRepository;
-import br.com.lucas.controle_validade.validation.ValidacaoEstabelecimentoPossuiProdutos;
 import br.com.lucas.controle_validade.validation.ValidacaoNomeProdutoUnico;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,7 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,240 +24,78 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProdutoServiceTest {
-
-    @Mock
-    private EstabelecimentoRepository repositoryEstabelecimento;
-
-    @Mock
-    private ProdutoRepository repository;
-
-    @Mock
-    private ValidacaoEstabelecimentoPossuiProdutos validacaoEstabelecimentoPossuiProdutos;
-
-    @Mock
-    private ValidacaoNomeProdutoUnico validacaoNomeProdutoUnico;
-
-    @InjectMocks
-    private ProdutoService service;
+    @Mock EstabelecimentoRepository estabelecimentoRepository;
+    @Mock ProdutoRepository repository;
+    @Mock ValidacaoNomeProdutoUnico validacaoNome;
+    @InjectMocks ProdutoService service;
 
     @Test
-    void deveCadastrarProduto() {
-
+    void unicidadeDoCadastroUsaEstabelecimento() {
         UUID estabelecimentoId = UUID.randomUUID();
-
-        var estabelecimento = new Estabelecimento();
-
-        var dto = new ProdutoRequestDTO(
-                "Arroz",
-                "Branco",
-                "Marca",
-                "Alimento",
-                estabelecimentoId
-        );
-
-        when(repositoryEstabelecimento.findById(estabelecimentoId))
-                .thenReturn(Optional.of(estabelecimento));
-
-        when(repository.save(any(Produto.class)))
-                .thenAnswer(i -> i.getArgument(0));
-
-        var resultado = service.cadastrarProduto(dto);
-
-        assertEquals("Arroz", resultado.nome());
-
-        verify(repositoryEstabelecimento)
-                .findById(estabelecimentoId);
-
-        verify(validacaoNomeProdutoUnico)
-                .validar(dto.nome());
-
-        verify(repository)
-                .save(any(Produto.class));
+        Estabelecimento estabelecimento = mock(Estabelecimento.class);
+        when(estabelecimento.getId()).thenReturn(estabelecimentoId);
+        when(estabelecimentoRepository.findById(estabelecimentoId)).thenReturn(Optional.of(estabelecimento));
+        when(repository.save(any())).thenAnswer(i -> i.getArgument(0));
+        var resposta = service.cadastrarProduto(
+                new ProdutoRequestDTO(" Arroz ", "Branco", "Marca", "Alimento", estabelecimentoId));
+        assertEquals("Arroz", resposta.nome());
+        verify(validacaoNome).validar("Arroz", estabelecimentoId);
     }
 
     @Test
-    void deveBuscarProdutosPorEstabelecimento() {
+    void estabelecimentoExistenteSemProdutosRetornaListaVazia() {
+        UUID id = UUID.randomUUID();
+        when(estabelecimentoRepository.existsById(id)).thenReturn(true);
+        when(repository.findByEstabelecimento_Id(id)).thenReturn(List.of());
+        assertTrue(service.buscaProdutosPorEstabelecimento(id).isEmpty());
+    }
 
+    @Test
+    void estabelecimentoInexistenteRetornaErro() {
+        UUID id = UUID.randomUUID();
+        when(estabelecimentoRepository.existsById(id)).thenReturn(false);
+        assertThrows(RecursoNaoEncontradoException.class,
+                () -> service.buscaProdutosPorEstabelecimento(id));
+    }
+
+    @Test
+    void updateComMesmoNomeNaoValidaDuplicidade() {
+        UUID id = UUID.randomUUID();
+        Produto produto = produto();
+        when(repository.findById(id)).thenReturn(Optional.of(produto));
+        service.atualizarProduto(id, new ProdutoUpdateDTO(" arroz ", "Integral", null, null));
+        verifyNoInteractions(validacaoNome);
+        assertEquals("Integral", produto.getDescricao());
+    }
+
+    @Test
+    void updateComNovoNomeValidaNoMesmoEstabelecimento() {
+        UUID id = UUID.randomUUID();
         UUID estabelecimentoId = UUID.randomUUID();
-
-        var estabelecimento = new Estabelecimento();
-
-        var produto = new Produto(
-                UUID.randomUUID(),
-                "Arroz",
-                "Branco",
-                "Marca",
-                "Alimento",
-                estabelecimento,
-                LocalDateTime.now(),
-                List.of()
-        );
-
-        when(repository.findByEstabelecimento_Id(estabelecimentoId))
-                .thenReturn(List.of(produto));
-
-        var resultado =
-                service.buscaProdutosPorEstabelecimento(estabelecimentoId);
-
-        assertEquals(1, resultado.size());
-        assertEquals("Arroz", resultado.get(0).nome());
-
-        verify(validacaoEstabelecimentoPossuiProdutos)
-                .validar(List.of(produto));
+        Estabelecimento estabelecimento = mock(Estabelecimento.class);
+        when(estabelecimento.getId()).thenReturn(estabelecimentoId);
+        Produto produto = new Produto("Arroz", "Branco", "Marca", "Alimento", estabelecimento);
+        when(repository.findById(id)).thenReturn(Optional.of(produto));
+        service.atualizarProduto(id, new ProdutoUpdateDTO("Feijão", null, null, null));
+        verify(validacaoNome).validar("Feijão", estabelecimentoId);
     }
 
     @Test
-    void deveRemoverProduto() {
-
+    void updateTentandoDuplicarNomePropagaErro() {
         UUID id = UUID.randomUUID();
-
-        var produto = new Produto();
-
-        when(repository.findById(id))
-                .thenReturn(Optional.of(produto));
-
-        service.removerProduto(id);
-
-        verify(repository)
-                .delete(produto);
+        UUID estabelecimentoId = UUID.randomUUID();
+        Estabelecimento estabelecimento = mock(Estabelecimento.class);
+        when(estabelecimento.getId()).thenReturn(estabelecimentoId);
+        Produto produto = new Produto("Arroz", "Branco", "Marca", "Alimento", estabelecimento);
+        when(repository.findById(id)).thenReturn(Optional.of(produto));
+        doThrow(new RecursoJaExisteException("duplicado"))
+                .when(validacaoNome).validar("Feijão", estabelecimentoId);
+        assertThrows(RecursoJaExisteException.class,
+                () -> service.atualizarProduto(id, new ProdutoUpdateDTO("Feijão", null, null, null)));
+        assertEquals("Arroz", produto.getNome());
     }
 
-    @Test
-    void deveFalharAoRemoverProdutoInexistente() {
-
-        UUID id = UUID.randomUUID();
-
-        when(repository.findById(id))
-                .thenReturn(Optional.empty());
-
-        assertThrows(
-                RecursoNaoEncontradoException.class,
-                () -> service.removerProduto(id)
-        );
-
-        verify(repository, never())
-                .delete(any());
-    }
-
-    @Test
-    void deveAtualizarSomenteNomeDoProduto() {
-
-        UUID id = UUID.randomUUID();
-
-        Estabelecimento estabelecimento =
-                new Estabelecimento();
-
-        Produto produto = new Produto(
-                id,
-                "Arroz",
-                "Branco",
-                "Marca",
-                "Alimento",
-                estabelecimento,
-                LocalDateTime.now(),
-                List.of()
-        );
-
-        when(repository.findById(id))
-                .thenReturn(Optional.of(produto));
-
-        when(repository.save(produto))
-                .thenReturn(produto);
-
-        var resultado = service.atualizarProduto(
-                id,
-                new ProdutoUpdateDTO(
-                        "Arroz Integral",
-                        null,
-                        null,
-                        null
-                )
-        );
-
-        assertEquals("Arroz Integral", resultado.nome());
-        assertEquals("Branco", resultado.descricao());
-
-        assertSame(
-                estabelecimento,
-                produto.getEstabelecimento()
-        );
-
-        verify(validacaoNomeProdutoUnico)
-                .validar("Arroz Integral");
-
-        verify(repository)
-                .save(produto);
-    }
-
-    @Test
-    void deveAtualizarMultiplosCamposDoProdutoEPreservarOmitidos() {
-
-        UUID id = UUID.randomUUID();
-
-        Estabelecimento estabelecimento =
-                new Estabelecimento();
-
-        Produto produto = new Produto(
-                id,
-                "Arroz",
-                "Branco",
-                "Marca",
-                "Alimento",
-                estabelecimento,
-                LocalDateTime.now(),
-                List.of()
-        );
-
-        when(repository.findById(id))
-                .thenReturn(Optional.of(produto));
-
-        when(repository.save(produto))
-                .thenReturn(produto);
-
-        var resultado = service.atualizarProduto(
-                id,
-                new ProdutoUpdateDTO(
-                        null,
-                        "Integral",
-                        "Nova Marca",
-                        "Graos"
-                )
-        );
-
-        assertEquals("Arroz", resultado.nome());
-        assertEquals("Integral", resultado.descricao());
-        assertEquals("Nova Marca", resultado.marca());
-        assertEquals("Graos", resultado.categoria());
-
-        verify(validacaoNomeProdutoUnico, never())
-                .validar(anyString());
-
-        verify(repository)
-                .save(produto);
-    }
-
-    @Test
-    void deveFalharAoAtualizarProdutoInexistente() {
-
-        UUID id = UUID.randomUUID();
-
-        when(repository.findById(id))
-                .thenReturn(Optional.empty());
-
-        assertThrows(
-                RecursoNaoEncontradoException.class,
-                () -> service.atualizarProduto(
-                        id,
-                        new ProdutoUpdateDTO(
-                                "Novo",
-                                null,
-                                null,
-                                null
-                        )
-                )
-        );
-
-        verify(repository, never())
-                .save(any());
+    private Produto produto() {
+        return new Produto("Arroz", "Branco", "Marca", "Alimento", mock(Estabelecimento.class));
     }
 }

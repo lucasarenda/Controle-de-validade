@@ -5,11 +5,10 @@ import br.com.lucas.controle_validade.Dto.request.LoteUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.LoteResponseDTO;
 import br.com.lucas.controle_validade.service.LoteService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -17,39 +16,26 @@ import java.util.UUID;
 public class LoteController {
     private final LoteService service;
 
-    public LoteController(LoteService service) {
-        this.service = service;
-    }
+    public LoteController(LoteService service) { this.service = service; }
 
     @PostMapping
-    @Transactional
     public ResponseEntity<LoteResponseDTO> cadastrarLote(@RequestBody @Valid LoteRequestDTO dto) {
-        return ResponseEntity.ok(service.cadastrarLote(dto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.cadastrarLote(dto));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<LoteResponseDTO> buscaLotePorId(@PathVariable UUID id) {
-        return ResponseEntity.ok(service.buscaLotePorId(id));
-    }
-
-    @GetMapping("/produto/{produtoId}")
-    public ResponseEntity<List<LoteResponseDTO>> buscaLotesPorProduto(@PathVariable UUID produtoId) {
-        return ResponseEntity.ok(service.buscaLotesPorProduto(produtoId));
-    }
+    public LoteResponseDTO buscarPorId(@PathVariable UUID id) { return service.buscaLotePorId(id); }
 
     @DeleteMapping("/{id}")
-    @Transactional
-    public ResponseEntity<String> removerLote(@PathVariable UUID id) {
+    public ResponseEntity<Void> removerLote(@PathVariable UUID id) {
         service.removerLote(id);
-        return ResponseEntity.ok("Lote removido com sucesso!!");
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}")
-    @Transactional
     public ResponseEntity<LoteResponseDTO> atualizarLote(
             @PathVariable UUID id,
-            @RequestBody @Valid LoteUpdateDTO dto
-    ) {
+            @RequestBody @Valid LoteUpdateDTO dto) {
         return ResponseEntity.ok(service.atualizarLote(id, dto));
     }
 }

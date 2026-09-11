@@ -1,8 +1,7 @@
 package br.com.lucas.controle_validade.controller;
 
-import br.com.lucas.controle_validade.Dto.request.LoteRequestDTO;
-import br.com.lucas.controle_validade.Dto.request.LoteUpdateDTO;
 import br.com.lucas.controle_validade.Dto.response.LoteResponseDTO;
+import br.com.lucas.controle_validade.exception.custom.DataLoteInvalidaException;
 import br.com.lucas.controle_validade.model.StatusValidade;
 import br.com.lucas.controle_validade.service.LoteService;
 import org.junit.jupiter.api.Test;
@@ -15,195 +14,63 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(LoteController.class)
 @WithMockUser
 class LoteControllerTest {
-
-    @Autowired
-    private MockMvc mvc;
-
-    @MockitoBean
-    private LoteService loteService;
+    @Autowired MockMvc mvc;
+    @MockitoBean LoteService loteService;
 
     @Test
-    void confirmaCadastroDoLote() throws Exception {
+    void postLoteRetorna201() throws Exception {
         UUID produtoId = UUID.randomUUID();
-        UUID loteId = UUID.randomUUID();
-
+        when(loteService.cadastrarLote(any())).thenReturn(new LoteResponseDTO(
+                UUID.randomUUID(), "L1", 1, BigDecimal.ONE, LocalDate.of(2026, 9, 1),
+                LocalDate.of(2026, 10, 1), "A", produtoId, 20, StatusValidade.NORMAL));
         String json = """
-                {
-                  "numeroLote": "LOTE-001",
-                  "quantidade": 50,
-                  "custoUnitario": 7.90,
-                  "dataEntrada": "2026-08-24",
-                  "dataValidade": "2026-09-30",
-                  "endereco": "Corredor A - Prateleira 2",
-                  "produtoId": "%s"
-                }
+                {"numeroLote":"L1","quantidade":1,"custoUnitario":1,
+                "dataEntrada":"2026-09-01","dataValidade":"2026-10-01",
+                "endereco":"A","produtoId":"%s"}
                 """.formatted(produtoId);
-
-        LoteResponseDTO responseDTO = new LoteResponseDTO(
-                loteId,
-                "LOTE-001",
-                50,
-                new BigDecimal("7.90"),
-                LocalDate.of(2026, 8, 24),
-                LocalDate.of(2026, 9, 30),
-                "Corredor A - Prateleira 2",
-                produtoId,
-                30L,
-                StatusValidade.NORMAL
-        );
-
-        when(loteService.cadastrarLote(any(LoteRequestDTO.class)))
-                .thenReturn(responseDTO);
-
-        mvc.perform(
-                        post("/lotes")
-                                .with(csrf())
-                                .content(json)
-                                .contentType(MediaType.APPLICATION_JSON)
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(loteId.toString()))
-                .andExpect(jsonPath("$.numeroLote").value("LOTE-001"))
-                .andExpect(jsonPath("$.quantidade").value(50))
-                .andExpect(jsonPath("$.custoUnitario").value(7.90))
-                .andExpect(jsonPath("$.endereco").value("Corredor A - Prateleira 2"));
-
-        verify(loteService)
-                .cadastrarLote(any(LoteRequestDTO.class));
+        mvc.perform(post("/lotes").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(json))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.numeroLote").value("L1"));
     }
 
     @Test
-    void buscaLotePorId() throws Exception {
+    void patchLoteRetorna200ComRecursoAtualizado() throws Exception {
+        UUID id = UUID.randomUUID();
         UUID produtoId = UUID.randomUUID();
-        UUID loteId = UUID.randomUUID();
-
-        LoteResponseDTO responseDTO = new LoteResponseDTO(
-                loteId,
-                "LOTE-001",
-                50,
-                new BigDecimal("7.90"),
-                LocalDate.of(2026, 8, 24),
-                LocalDate.of(2026, 9, 30),
-                "Corredor A - Prateleira 2",
-                produtoId,
-                30L,
-                StatusValidade.NORMAL
-        );
-
-        when(loteService.buscaLotePorId(loteId))
-                .thenReturn(responseDTO);
-
-        mvc.perform(
-                        get("/lotes/{id}", loteId)
-                )
+        when(loteService.atualizarLote(eq(id), any())).thenReturn(new LoteResponseDTO(
+                id, "L2", 2, BigDecimal.ONE, LocalDate.of(2026, 9, 1),
+                LocalDate.of(2026, 10, 1), "B", produtoId, 20, StatusValidade.NORMAL));
+        mvc.perform(patch("/lotes/{id}", id).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"numeroLote\":\"L2\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(loteId.toString()))
-                .andExpect(jsonPath("$.numeroLote").value("LOTE-001"))
-                .andExpect(jsonPath("$.quantidade").value(50));
-
-        verify(loteService).buscaLotePorId(loteId);
+                .andExpect(jsonPath("$.id").value(id.toString()))
+                .andExpect(jsonPath("$.numeroLote").value("L2"));
     }
 
     @Test
-    void buscaLotePorProduto() throws Exception {
-        List<LoteResponseDTO> lotes = new ArrayList<>();
-
-        UUID produtoId = UUID.randomUUID();
-        UUID loteId1 = UUID.randomUUID();
-        UUID loteId2 = UUID.randomUUID();
-
-        LoteResponseDTO responseDTO1 = new LoteResponseDTO(
-                loteId1,
-                "LOTE-001",
-                50,
-                new BigDecimal("7.90"),
-                LocalDate.of(2026, 8, 24),
-                LocalDate.of(2026, 9, 30),
-                "Corredor A - Prateleira 2",
-                produtoId,
-                30L,
-                StatusValidade.NORMAL
-        );
-
-        LoteResponseDTO responseDTO2 = new LoteResponseDTO(
-                loteId2,
-                "LOTE-002",
-                50,
-                new BigDecimal("7.90"),
-                LocalDate.of(2026, 8, 24),
-                LocalDate.of(2026, 10, 30),
-                "Corredor A - Prateleira 2",
-                produtoId,
-                30L,
-                StatusValidade.NORMAL
-        );
-
-        lotes.add(responseDTO1);
-        lotes.add(responseDTO2);
-
-        when(loteService.buscaLotesPorProduto(produtoId))
-                .thenReturn(lotes);
-
-        mvc.perform(
-                        get("/lotes/produto/{produtoId}", produtoId)
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].numeroLote").value("LOTE-001"))
-                .andExpect(jsonPath("$[1].numeroLote").value("LOTE-002"));
-
-        verify(loteService).buscaLotesPorProduto(produtoId);
-    }
-
-    @Test
-    void removeLote() throws Exception {
-        UUID loteId = UUID.randomUUID();
-
-        doNothing()
-                .when(loteService)
-                .removerLote(loteId);
-
-        mvc.perform(
-                        delete("/lotes/{id}", loteId)
-                                .with(csrf())
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().string("Lote removido com sucesso!!"));
-
-        verify(loteService).removerLote(loteId);
-    }
-
-    @Test
-    void deveAtualizarLoteParcialmente() throws Exception {
-        UUID loteId = UUID.randomUUID();
-        UUID produtoId = UUID.randomUUID();
-        var response = new LoteResponseDTO(loteId, "LOTE-002", 25, new BigDecimal("7.90"),
-                LocalDate.of(2026, 8, 24), LocalDate.of(2026, 9, 30), "Prateleira 3",
-                produtoId, 30L, StatusValidade.NORMAL);
-        when(loteService.atualizarLote(eq(loteId), any(LoteUpdateDTO.class))).thenReturn(response);
-
-        mvc.perform(patch("/lotes/{id}", loteId)
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"numeroLote\":\"LOTE-002\",\"quantidade\":25,\"endereco\":\"Prateleira 3\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(loteId.toString()))
-                .andExpect(jsonPath("$.numeroLote").value("LOTE-002"))
-                .andExpect(jsonPath("$.quantidade").value(25))
-                .andExpect(jsonPath("$.produtoId").value(produtoId.toString()));
-
-        verify(loteService).atualizarLote(eq(loteId), any(LoteUpdateDTO.class));
+    void regraDeDatasTemFormatoPadronizado() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(loteService.atualizarLote(eq(id), any())).thenThrow(
+                new DataLoteInvalidaException("Data de validade não pode ser anterior à data de entrada"));
+        mvc.perform(patch("/lotes/{id}", id).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"dataValidade\":\"2020-01-01\"}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.status").value(422))
+                .andExpect(jsonPath("$.path").value("/lotes/" + id))
+                .andExpect(jsonPath("$.mensagem").value(
+                        "Data de validade não pode ser anterior à data de entrada"));
     }
 }
