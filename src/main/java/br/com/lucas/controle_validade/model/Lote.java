@@ -19,13 +19,17 @@ public class Lote {
     private UUID id;
 
     private String numeroLote;
+
     private Integer quantidade;
+
+    @Column(precision = 10, scale = 2, nullable = false)
     private BigDecimal custoUnitario;
 
     @NotNull
     private LocalDate dataEntrada;
 
     private LocalDate dataValidade;
+
     private String endereco;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
