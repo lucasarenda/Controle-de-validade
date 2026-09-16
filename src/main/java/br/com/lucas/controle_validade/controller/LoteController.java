@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -24,8 +25,13 @@ public class LoteController {
     }
 
     @GetMapping("/{id}")
-    public LoteResponseDTO buscarPorId(@PathVariable UUID id) { return service.buscaLotePorId(id); }
-
+    public LoteResponseDTO buscarPorId(@PathVariable UUID id) {
+        return service.buscaLotePorId(id);
+    }
+    @GetMapping("/produto/{ProdutoId}")
+    public List<LoteResponseDTO> buscarPorLotesPorProduto(@PathVariable UUID ProdutoId) {
+        return service.buscaLotesPorProduto(ProdutoId);
+    }
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> removerLote(@PathVariable UUID id) {
         service.removerLote(id);
@@ -33,9 +39,7 @@ public class LoteController {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<LoteResponseDTO> atualizarLote(
-            @PathVariable UUID id,
-            @RequestBody @Valid LoteUpdateDTO dto) {
+    public ResponseEntity<LoteResponseDTO> atualizarLote(@PathVariable UUID id, @RequestBody @Valid LoteUpdateDTO dto) {
         return ResponseEntity.ok(service.atualizarLote(id, dto));
     }
 }

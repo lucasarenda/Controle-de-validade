@@ -2,6 +2,7 @@ package br.com.lucas.controle_validade.controller;
 
 import br.com.lucas.controle_validade.Dto.request.ProdutoRequestDTO;
 import br.com.lucas.controle_validade.Dto.request.ProdutoUpdateDTO;
+import br.com.lucas.controle_validade.Dto.response.EstabelecimentoResponseDTO;
 import br.com.lucas.controle_validade.Dto.response.ProdutoResponseDTO;
 import br.com.lucas.controle_validade.Dto.response.LoteResponseDTO;
 import br.com.lucas.controle_validade.service.LoteService;
@@ -28,6 +29,11 @@ public class ProdutoController {
     @PostMapping
     public ResponseEntity<ProdutoResponseDTO> cadastrarProduto(@RequestBody @Valid ProdutoRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.cadastrarProduto(dto));
+    }
+
+    @GetMapping("/estabelecimento/{estabelecimentoId}")
+    public List<ProdutoResponseDTO> buscaProdutosPorEstabelecimentos(@PathVariable UUID estabelecimentoId) {
+        return service.buscaProdutosPorEstabelecimento(estabelecimentoId);
     }
 
     @GetMapping("/{produtoId}/lotes")

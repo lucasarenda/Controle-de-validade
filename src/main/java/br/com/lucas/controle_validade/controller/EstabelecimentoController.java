@@ -36,6 +36,11 @@ public class EstabelecimentoController {
         return produtoService.buscaProdutosPorEstabelecimento(estabelecimentoId);
     }
 
+    @GetMapping("/usuario/{UserId}")
+    public List<EstabelecimentoResponseDTO> buscaEstabelecimentosPorUsuario(@PathVariable UUID UserId) {
+        return service.buscaEstabelecimentoPorUsuario(UserId);
+    }
+
     @GetMapping("/{id}")
     public EstabelecimentoResponseDTO buscarPorId(@PathVariable UUID id) {
         return service.buscarPorId(id);

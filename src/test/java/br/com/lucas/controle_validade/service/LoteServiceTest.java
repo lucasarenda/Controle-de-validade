@@ -30,10 +30,17 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class LoteServiceTest {
-    @Mock LoteRepository repository;
-    @Mock ProdutoRepository produtoRepository;
-    @Mock ValidacaoNumeroLoteUnico validacaoNumero;
+    @Mock
+    LoteRepository repository;
+
+    @Mock
+    ProdutoRepository produtoRepository;
+
+    @Mock
+    ValidacaoNumeroLoteUnico validacaoNumero;
+
     private LoteService service;
+
     private final LocalDate hoje = LocalDate.of(2026, 9, 11);
 
     @BeforeEach

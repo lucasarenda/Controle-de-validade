@@ -24,11 +24,20 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class EstabelecimentoServiceTest {
-    @Mock UserRepository userRepository;
-    @Mock EstabelecimentoRepository repository;
-    @Mock ValidacaoNomeEstabelecimentoUnico validacaoNome;
-    @Mock ValidacaoCnpjEstabelecimentoUnico validacaoCnpj;
-    @InjectMocks EstabelecimentoService service;
+    @Mock
+    UserRepository userRepository;
+
+    @Mock
+    EstabelecimentoRepository repository;
+
+    @Mock
+    ValidacaoNomeEstabelecimentoUnico validacaoNome;
+
+    @Mock
+    ValidacaoCnpjEstabelecimentoUnico validacaoCnpj;
+
+    @InjectMocks
+    EstabelecimentoService service;
 
     @Test
     void cadastraComCamposCorretosENomeNormalizado() {
